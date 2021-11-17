@@ -14,5 +14,6 @@ func main() {
 	account := NewAccount()
 	fmt.Printf("Address: %v\n", account.GetAddress())
 
-	NewCoinbaseTransaction(account.GetAddress(), 69.69)
+	t := NewCoinbaseTransaction(account.GetAddress(), 69.69)
+	fmt.Println(t.TransactionToByteArray())
 }
