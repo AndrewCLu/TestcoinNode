@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/AndrewCLu/TestcoinNode/crypto"
+)
 
 type account struct {
 	publicAddress string
@@ -11,6 +15,7 @@ func NewAccount() account {
 	account := account{publicAddress: "asdasd", privateKey: "b"}
 	fmt.Printf("Created account with address: %v\n", account.publicAddress)
 
+	crypto.GenKey()
 	return account
 }
 
