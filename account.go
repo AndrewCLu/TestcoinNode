@@ -1,6 +1,19 @@
 package main
 
+import "fmt"
+
 type account struct {
-	PublicAddress string `json:"publicAddress"`
-	PrivateKey    string `json:"privateKey"`
+	publicAddress string
+	privateKey    string
+}
+
+func NewAccount() account {
+	account := account{publicAddress: "asdasd", privateKey: "b"}
+	fmt.Printf("Created account with address: %v\n", account.publicAddress)
+
+	return account
+}
+
+func (a account) GetAddress() string {
+	return a.publicAddress
 }
