@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -23,5 +24,15 @@ func TestEncodeDecodePrivateKey(t *testing.T) {
 
 	if !privateKey.Equal(decodedPrivateKey) {
 		t.Fatalf(`Private keys do not match. Original: %v, Decoded: %v`, privateKey, decodedPrivateKey)
+	}
+}
+
+// Tests that the hash of a new account address corresponds to its public key
+func TestAddressIsHashOfPublicKey(t *testing.T) {
+	address, encodedPublicKey, _ := NewAccountKeys()
+	hashedPublicKey := hashKey(encodedPublicKey)
+
+	if !reflect.DeepEqual(address, hashedPublicKey) {
+		t.Fatalf(`Hashes do not match. Address: %v, Hashed public key: %v`, address, hashedPublicKey)
 	}
 }
