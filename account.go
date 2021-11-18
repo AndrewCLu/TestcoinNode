@@ -6,13 +6,16 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/crypto"
 )
 
+const AddressLength = 32
+
 type account struct {
-	address           [32]byte
+	address           [AddressLength]byte
 	encodedPublicKey  []byte
 	encodedPrivateKey []byte
 }
 
 func NewAccount() account {
+	// TODO: Must resize length of address if AddressLength and HashLength are not the same
 	address, encodedPublicKey, encodedPrivateKey := crypto.NewAccountKeys()
 	account := account{
 		address:           address,
@@ -25,6 +28,6 @@ func NewAccount() account {
 	return account
 }
 
-func (a account) GetAddress() [32]byte {
+func (a account) GetAddress() [AddressLength]byte {
 	return a.address
 }

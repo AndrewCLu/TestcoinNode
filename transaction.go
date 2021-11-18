@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
@@ -15,17 +16,17 @@ type Transaction struct {
 }
 
 type TransactionInput struct {
-	PreviousTransactionHash  [32]byte `json:"previousTransactionHash"`
-	PreviousTransactionIndex uint16   `json:"previousTransactionIndex"`
-	SenderSignature          []byte   `json:"senderSignature"`
+	PreviousTransactionHash  []byte                       `json:"previousTransactionHash"`
+	PreviousTransactionIndex uint16                       `json:"previousTransactionIndex"`
+	SenderSignature          [crypto.SignatureLength]byte `json:"senderSignature"`
 }
 
 type TransactionOutput struct {
-	ReceiverAddress [32]byte `json:"receiverAddress"`
-	Amount          float64  `json:"amount"`
+	ReceiverAddress [AddressLength]byte `json:"receiverAddress"`
+	Amount          float64             `json:"amount"`
 }
 
-func NewCoinbaseTransaction(address [32]byte, amount float64) Transaction {
+func NewCoinbaseTransaction(address [AddressLength]byte, amount float64) Transaction {
 	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
 	transaction := Transaction{
 		ProtocolVersion: CurrentProtocolVersion,
@@ -46,7 +47,7 @@ func (t TransactionInput) TransactionInputToByteArray() []byte {
 	indexBytes := util.Uint16ToBytes(t.PreviousTransactionIndex)
 	inputBytes = append(inputBytes, indexBytes...)
 
-	inputBytes = append(inputBytes, t.SenderSignature...)
+	inputBytes = append(inputBytes, t.SenderSignature[:]...)
 
 	return inputBytes
 }
