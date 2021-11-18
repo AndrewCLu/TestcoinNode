@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-// Tests signing and verification using newly generated account keys
-func TestSignVerifyWithAccountKeys(t *testing.T) {
-	_, encodedPublicKey, encodedPrivateKey := NewAccountKeys()
+// Tests signing and verification using newly generated digital signature keys
+func TestSignVerifyWithDigitalSignatureKeys(t *testing.T) {
+	_, encodedPublicKey, encodedPrivateKey := NewDigitalSignatureKeys()
 
 	bytesA := []byte("Go BTC")
 	bytesB := []byte("Go ETH")

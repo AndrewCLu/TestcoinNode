@@ -29,7 +29,7 @@ func TestEncodeDecodePrivateKey(t *testing.T) {
 
 // Tests that the hash of a new account address corresponds to its public key
 func TestAddressIsHashOfPublicKey(t *testing.T) {
-	address, encodedPublicKey, _ := NewAccountKeys()
+	address, encodedPublicKey, _ := NewDigitalSignatureKeys()
 	hashedPublicKey := HashBytes(encodedPublicKey)
 
 	if !reflect.DeepEqual(address, hashedPublicKey) {

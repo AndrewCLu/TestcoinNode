@@ -1,10 +1,12 @@
-package main
+package transaction
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/crypto"
+	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
@@ -26,14 +28,14 @@ type TransactionInput struct {
 }
 
 type TransactionOutput struct {
-	ReceiverAddress [AddressLength]byte `json:"receiverAddress"`
-	Amount          float64             `json:"amount"`
+	ReceiverAddress [account.AddressLength]byte `json:"receiverAddress"`
+	Amount          float64                     `json:"amount"`
 }
 
-func NewCoinbaseTransaction(address [AddressLength]byte, amount float64) Transaction {
+func NewCoinbaseTransaction(address [account.AddressLength]byte, amount float64) Transaction {
 	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
 	transaction := Transaction{
-		ProtocolVersion: CurrentProtocolVersion,
+		ProtocolVersion: protocol.CurrentProtocolVersion,
 		Inputs:          []TransactionInput{},
 		Outputs:         []TransactionOutput{output},
 		Timestamp:       time.Now(),
@@ -76,6 +78,12 @@ func (t Transaction) TransactionToByteArray() []byte {
 	transactionBytes = append(transactionBytes, timeBytes...)
 
 	return transactionBytes
+}
+
+// Convertes a byte array back into a Transaction
+// TODO: Check safety of inputs
+func ByteArrayToTransaction(bytes []byte) Transaction {
+	return Transaction{}
 }
 
 // Converts a TransactionInput into a byte array
@@ -130,10 +138,10 @@ func (t TransactionOutput) TransactionOutputToByteArray() []byte {
 // Converts a byte array into a TransactionOutput
 // TODO: Check safety of inputs
 func ByteArrayToTransactionOutput(bytes []byte) TransactionOutput {
-	addressBytes := bytes[:AddressLength]
-	amountBytes := bytes[AddressLength:]
+	addressBytes := bytes[:account.AddressLength]
+	amountBytes := bytes[account.AddressLength:]
 
-	var address [AddressLength]byte
+	var address [account.AddressLength]byte
 	var amount float64
 
 	copy(address[:], addressBytes)

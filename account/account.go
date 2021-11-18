@@ -1,4 +1,4 @@
-package main
+package account
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ type account struct {
 
 func NewAccount() account {
 	// TODO: Must resize length of address if AddressLength and HashLength are not the same
-	address, encodedPublicKey, encodedPrivateKey := crypto.NewAccountKeys()
+	address, encodedPublicKey, encodedPrivateKey := crypto.NewDigitalSignatureKeys()
 	account := account{
 		address:           address,
 		encodedPublicKey:  encodedPublicKey,

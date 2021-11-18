@@ -6,8 +6,8 @@ import (
 
 const HashLength = 32
 
-// Generates keys for an account, including a 32 byte address, public key, and private key
-func NewAccountKeys() (address [HashLength]byte, encodedPublicKey []byte, encodedPrivateKey []byte) {
+// Generates digital signature, including a 32 byte address, public key, and private key
+func NewDigitalSignatureKeys() (address [HashLength]byte, encodedPublicKey []byte, encodedPrivateKey []byte) {
 	publicKey, privateKey, _ := newECDSAKeyPair()
 
 	encodedPublicKey, _ = encodePublicKey(publicKey)

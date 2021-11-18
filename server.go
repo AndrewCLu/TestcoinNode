@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-)
 
-const CurrentProtocolVersion = 1
+	"github.com/AndrewCLu/TestcoinNode/account"
+	"github.com/AndrewCLu/TestcoinNode/transaction"
+)
 
 func main() {
 	fmt.Printf("Starting server at port 8080\n")
 
-	account := NewAccount()
+	account := account.NewAccount()
 
-	t := NewCoinbaseTransaction(account.GetAddress(), 69.69)
+	t := transaction.NewCoinbaseTransaction(account.GetAddress(), 69.69)
 	fmt.Println(t.TransactionToByteArray())
 }
