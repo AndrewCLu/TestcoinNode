@@ -20,11 +20,11 @@ type TransactionInput struct {
 }
 
 type TransactionOutput struct {
-	ReceiverAddress string  `json:"receiverAddress"`
-	Amount          float64 `json:"amount"`
+	ReceiverAddress [32]byte `json:"receiverAddress"`
+	Amount          float64  `json:"amount"`
 }
 
-func NewCoinbaseTransaction(address string, amount float64) Transaction {
+func NewCoinbaseTransaction(address [32]byte, amount float64) Transaction {
 	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
 	transaction := Transaction{
 		ProtocolVersion: CurrentProtocolVersion,
@@ -69,9 +69,9 @@ func (t Transaction) TransactionToByteArray() []byte {
 	fmt.Println(outputBytes)
 	transactionBytes = append(transactionBytes, outputBytes...)
 
-	timeBytes, error := t.Timestamp.MarshalBinary()
-	if error != nil {
-		fmt.Printf("Error occurred creating byte array for transaction timestamp: %v\n", error)
+	timeBytes, err := t.Timestamp.MarshalBinary()
+	if err != nil {
+		fmt.Printf("Error occurred creating byte array for transaction timestamp: %v\n", err)
 	}
 	fmt.Println(timeBytes)
 	transactionBytes = append(transactionBytes, timeBytes...)

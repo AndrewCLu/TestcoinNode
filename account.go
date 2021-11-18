@@ -7,18 +7,24 @@ import (
 )
 
 type account struct {
-	publicAddress string
-	privateKey    string
+	address           [32]byte
+	encodedPublicKey  []byte
+	encodedPrivateKey []byte
 }
 
 func NewAccount() account {
-	account := account{publicAddress: "asdasd", privateKey: "b"}
-	fmt.Printf("Created account with address: %v\n", account.publicAddress)
+	address, encodedPublicKey, encodedPrivateKey := crypto.NewAccountKeys()
+	account := account{
+		address:           address,
+		encodedPublicKey:  encodedPublicKey,
+		encodedPrivateKey: encodedPrivateKey,
+	}
 
-	crypto.GenKey()
+	fmt.Printf("Created account with address: %v\n", account.address)
+
 	return account
 }
 
-func (a account) GetAddress() string {
-	return a.publicAddress
+func (a account) GetAddress() [32]byte {
+	return a.address
 }

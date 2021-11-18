@@ -7,35 +7,35 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"fmt"
-	"os"
 )
 
-func GenKey() {
-	pubkeyCurve := elliptic.P256() //see http://golang.org/pkg/crypto/elliptic/#P256
+func NewAccountKeys() (address [32]byte, encodedPublicKey []byte, encodedPrivateKey []byte) {
+	publicKeyCurve := elliptic.P256()
 
-	privatekey := new(ecdsa.PrivateKey)
-	privatekey, err := ecdsa.GenerateKey(pubkeyCurve, rand.Reader) // this generates a public & private key pair
+	privateKey := new(ecdsa.PrivateKey)
+	privateKey, err := ecdsa.GenerateKey(publicKeyCurve, rand.Reader)
 
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
 	}
 
-	var pubkey ecdsa.PublicKey
-	pubkey = privatekey.PublicKey
+	publicKey := &privateKey.PublicKey
 
-	x509EncodedPriv, _ := x509.MarshalECPrivateKey(privatekey)
-	x509EncodedPub, _ := x509.MarshalPKIXPublicKey(&pubkey)
+	encodedPrivateKey, _ = x509.MarshalECPrivateKey(privateKey)
+	encodedPublicKey, _ = x509.MarshalPKIXPublicKey(publicKey)
+	address = sha256.Sum256(encodedPublicKey)
 
 	fmt.Println("Private Key :")
-	fmt.Printf("%x \n", x509EncodedPriv)
-	fmt.Printf("%T \n", x509EncodedPriv)
+	fmt.Printf("%v \n", encodedPrivateKey)
+	fmt.Printf("%T \n", encodedPrivateKey)
 
 	fmt.Println("Public Key :")
-	fmt.Printf("%x \n", x509EncodedPub)
-	fmt.Printf("%T \n", x509EncodedPub)
+	fmt.Printf("%v \n", encodedPublicKey)
+	fmt.Printf("%T \n", encodedPublicKey)
 
-	fmt.Printf("%v \n", len(x509EncodedPub))
-	fmt.Printf("%v \n", len(sha256.Sum256(x509EncodedPub)))
-	fmt.Printf("%v \n", sha256.Sum256(x509EncodedPub))
+	fmt.Printf("%v \n", len(encodedPublicKey))
+	fmt.Printf("%v \n", len(address))
+	fmt.Printf("%v \n", address)
+
+	return address, encodedPublicKey, encodedPrivateKey
 }
