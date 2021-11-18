@@ -37,4 +37,5 @@ func GenKey() {
 
 	fmt.Printf("%v \n", len(x509EncodedPub))
 	fmt.Printf("%v \n", len(sha256.Sum256(x509EncodedPub)))
+	fmt.Printf("%v \n", sha256.Sum256(x509EncodedPub))
 }
