@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -14,9 +15,9 @@ type Transaction struct {
 }
 
 type TransactionInput struct {
-	PreviousTransactionHash  string `json:"previousTransactionHash"`
-	PreviousTransactionIndex int    `json:"previousTransactionIndex"`
-	SenderSignature          string `json:"senderSignature"`
+	PreviousTransactionHash  [32]byte `json:"previousTransactionHash"`
+	PreviousTransactionIndex uint16   `json:"previousTransactionIndex"`
+	SenderSignature          []byte   `json:"senderSignature"`
 }
 
 type TransactionOutput struct {
@@ -38,11 +39,29 @@ func NewCoinbaseTransaction(address [32]byte, amount float64) Transaction {
 }
 
 func (t TransactionInput) TransactionInputToByteArray() []byte {
-	return make([]byte, 2)
+	inputBytes := make([]byte, 0)
+
+	inputBytes = append(inputBytes, t.PreviousTransactionHash[:]...)
+
+	indexBytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(indexBytes, t.PreviousTransactionIndex)
+	inputBytes = append(inputBytes, indexBytes...)
+
+	inputBytes = append(inputBytes, t.SenderSignature...)
+
+	return inputBytes
 }
 
 func (t TransactionOutput) TransactionOutputToByteArray() []byte {
-	return make([]byte, 2)
+	outputBytes := make([]byte, 0)
+
+	outputBytes = append(outputBytes, t.ReceiverAddress[:]...)
+
+	amountBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(amountBytes, math.Float64bits(t.Amount))
+	outputBytes = append(outputBytes, amountBytes...)
+
+	return outputBytes
 }
 
 // Takes a transaction and returns a byte array representing the transaction
@@ -52,28 +71,24 @@ func (t Transaction) TransactionToByteArray() []byte {
 
 	versionBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(versionBytes, t.ProtocolVersion)
-	fmt.Println(versionBytes)
 	transactionBytes = append(transactionBytes, versionBytes...)
 
 	inputBytes := make([]byte, 0)
 	for _, input := range t.Inputs {
 		inputBytes = append(inputBytes, input.TransactionInputToByteArray()...)
 	}
-	fmt.Println(inputBytes)
 	transactionBytes = append(transactionBytes, inputBytes...)
 
 	outputBytes := make([]byte, 0)
 	for _, output := range t.Outputs {
 		outputBytes = append(outputBytes, output.TransactionOutputToByteArray()...)
 	}
-	fmt.Println(outputBytes)
 	transactionBytes = append(transactionBytes, outputBytes...)
 
 	timeBytes, err := t.Timestamp.MarshalBinary()
 	if err != nil {
 		fmt.Printf("Error occurred creating byte array for transaction timestamp: %v\n", err)
 	}
-	fmt.Println(timeBytes)
 	transactionBytes = append(transactionBytes, timeBytes...)
 
 	return transactionBytes
