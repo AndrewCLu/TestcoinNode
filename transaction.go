@@ -43,6 +43,12 @@ func NewCoinbaseTransaction(address [AddressLength]byte, amount float64) Transac
 	return transaction
 }
 
+// Hashes a transaction
+func (t Transaction) GetTransactionHash() [crypto.HashLength]byte {
+	bytes := t.TransactionToByteArray()
+	return crypto.HashBytes(bytes)
+}
+
 // Takes a transaction and returns a byte array representing the transaction
 // TODO: Make the byte array conversion more efficient by preallocation
 func (t Transaction) TransactionToByteArray() []byte {
