@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/AndrewCLu/TestcoinNode/crypto"
@@ -44,7 +45,7 @@ func NewCoinbaseTransaction(address [protocol.AddressLength]byte, amount float64
 		ProtocolVersion: protocol.CurrentProtocolVersion,
 		Inputs:          []TransactionInput{},
 		Outputs:         []TransactionOutput{output},
-		Timestamp:       time.Now(),
+		Timestamp:       time.Now().Round(0),
 	}
 
 	fmt.Printf("Coinbase transaction sending %v to %v\n", amount, address)
@@ -198,4 +199,9 @@ func ByteArrayToTransactionOutput(bytes []byte) TransactionOutput {
 	}
 
 	return output
+}
+
+// Checks if two transactions are equal
+func AreTransactionsEqual(ta Transaction, tb Transaction) bool {
+	return reflect.DeepEqual(ta.GetTransactionHash(), tb.GetTransactionHash())
 }
