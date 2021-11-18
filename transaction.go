@@ -1,10 +1,10 @@
 package main
 
 import (
-	"encoding/binary"
 	"fmt"
-	"math"
 	"time"
+
+	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
 type Transaction struct {
@@ -43,8 +43,7 @@ func (t TransactionInput) TransactionInputToByteArray() []byte {
 
 	inputBytes = append(inputBytes, t.PreviousTransactionHash[:]...)
 
-	indexBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(indexBytes, t.PreviousTransactionIndex)
+	indexBytes := util.Uint16ToBytes(t.PreviousTransactionIndex)
 	inputBytes = append(inputBytes, indexBytes...)
 
 	inputBytes = append(inputBytes, t.SenderSignature...)
@@ -57,8 +56,7 @@ func (t TransactionOutput) TransactionOutputToByteArray() []byte {
 
 	outputBytes = append(outputBytes, t.ReceiverAddress[:]...)
 
-	amountBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(amountBytes, math.Float64bits(t.Amount))
+	amountBytes := util.Float64ToBytes(t.Amount)
 	outputBytes = append(outputBytes, amountBytes...)
 
 	return outputBytes
@@ -69,8 +67,7 @@ func (t TransactionOutput) TransactionOutputToByteArray() []byte {
 func (t Transaction) TransactionToByteArray() []byte {
 	transactionBytes := make([]byte, 0)
 
-	versionBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(versionBytes, t.ProtocolVersion)
+	versionBytes := util.Uint16ToBytes(t.ProtocolVersion)
 	transactionBytes = append(transactionBytes, versionBytes...)
 
 	inputBytes := make([]byte, 0)

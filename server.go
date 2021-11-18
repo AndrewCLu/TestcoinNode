@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	// "log"
-	// "net/http"
 )
 
 const CurrentProtocolVersion = 1
