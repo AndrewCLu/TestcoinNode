@@ -9,33 +9,80 @@ import (
 	"fmt"
 )
 
+// Generates keys for an account, including a 32 byte address, public key, and private key
 func NewAccountKeys() (address [32]byte, encodedPublicKey []byte, encodedPrivateKey []byte) {
+	publicKey, privateKey, _ := newECDSAKeyPair()
+
+	encodedPublicKey, _ = encodePublicKey(publicKey)
+	encodedPrivateKey, _ = encodePrivateKey(privateKey)
+	address = hashKey(encodedPublicKey)
+
+	return address, encodedPublicKey, encodedPrivateKey
+}
+
+// Generates an ECDSA public private key pair
+func newECDSAKeyPair() (publicKey *ecdsa.PublicKey, privateKey *ecdsa.PrivateKey, err error) {
 	publicKeyCurve := elliptic.P256()
 
-	privateKey := new(ecdsa.PrivateKey)
-	privateKey, err := ecdsa.GenerateKey(publicKeyCurve, rand.Reader)
+	privateKey, err = ecdsa.GenerateKey(publicKeyCurve, rand.Reader)
 
 	if err != nil {
 		fmt.Println(err)
+		return nil, nil, err
 	}
 
-	publicKey := &privateKey.PublicKey
+	publicKey = &privateKey.PublicKey
 
-	encodedPrivateKey, _ = x509.MarshalECPrivateKey(privateKey)
-	encodedPublicKey, _ = x509.MarshalPKIXPublicKey(publicKey)
-	address = sha256.Sum256(encodedPublicKey)
+	return publicKey, privateKey, nil
+}
 
-	fmt.Println("Private Key :")
-	fmt.Printf("%v \n", encodedPrivateKey)
-	fmt.Printf("%T \n", encodedPrivateKey)
+// Encodes a ECDSA public key using x509 encoding
+func encodePublicKey(key *ecdsa.PublicKey) (bytes []byte, err error) {
+	bytes, err = x509.MarshalPKIXPublicKey(key)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 
-	fmt.Println("Public Key :")
-	fmt.Printf("%v \n", encodedPublicKey)
-	fmt.Printf("%T \n", encodedPublicKey)
+	return bytes, nil
+}
 
-	fmt.Printf("%v \n", len(encodedPublicKey))
-	fmt.Printf("%v \n", len(address))
-	fmt.Printf("%v \n", address)
+// Decodes an x509 encoded ECDSA public key
+func decodePublicKey(bytes []byte) (key *ecdsa.PublicKey, err error) {
+	genericPublicKey, err := x509.ParsePKIXPublicKey(bytes)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 
-	return address, encodedPublicKey, encodedPrivateKey
+	key = genericPublicKey.(*ecdsa.PublicKey)
+
+	return key, nil
+}
+
+// Encodes a ECDSA private key using x509 encoding
+func encodePrivateKey(key *ecdsa.PrivateKey) (bytes []byte, err error) {
+	bytes, err = x509.MarshalECPrivateKey(key)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return bytes, nil
+}
+
+// Decodes an x509 encoded ECDSA private key
+func decodePrivateKey(bytes []byte) (key *ecdsa.PrivateKey, err error) {
+	key, err = x509.ParseECPrivateKey(bytes)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return key, nil
+}
+
+// Hashes a key using SHA256
+func hashKey(encodedKey []byte) (hash [32]byte) {
+	return sha256.Sum256(encodedKey)
 }
