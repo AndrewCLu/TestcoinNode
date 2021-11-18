@@ -120,3 +120,23 @@ func (t TransactionOutput) TransactionOutputToByteArray() []byte {
 
 	return outputBytes
 }
+
+// Converts a byte array into a TransactionOutput
+// TODO: Check safety of inputs
+func ByteArrayToTransactionOutput(bytes []byte) TransactionOutput {
+	addressBytes := bytes[:AddressLength]
+	amountBytes := bytes[AddressLength:]
+
+	var address [AddressLength]byte
+	var amount float64
+
+	copy(address[:], addressBytes)
+	amount = util.BytesToFloat64(amountBytes)
+
+	output := TransactionOutput{
+		ReceiverAddress: address,
+		Amount:          amount,
+	}
+
+	return output
+}
