@@ -4,15 +4,21 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-const ProtocolVersionByteSize = 2
-const IndexByteSize = 2
-const AmountByteSize = 8
+const ProtocolVersionLength = 2
+const NumInputOutputLength = 2
+
+const TransactionHashLength = crypto.HashLength
+const TransactionIndexLength = 2
+const TransactionSignatureLength = crypto.SignatureLength
+const TransactionInputLength = TransactionHashLength + TransactionIndexLength + TransactionSignatureLength
+
+const TransactionAmountLength = 8
+const TransactionOutputLength = protocol.AddressLength + TransactionAmountLength
 
 type Transaction struct {
 	ProtocolVersion uint16              `json:"protocolVersion"`
@@ -22,17 +28,17 @@ type Transaction struct {
 }
 
 type TransactionInput struct {
-	PreviousTransactionHash  [crypto.HashLength]byte      `json:"previousTransactionHash"`
-	PreviousTransactionIndex uint16                       `json:"previousTransactionIndex"`
-	SenderSignature          [crypto.SignatureLength]byte `json:"senderSignature"`
+	PreviousTransactionHash  [TransactionHashLength]byte      `json:"previousTransactionHash"`
+	PreviousTransactionIndex uint16                           `json:"previousTransactionIndex"`
+	SenderSignature          [TransactionSignatureLength]byte `json:"senderSignature"`
 }
 
 type TransactionOutput struct {
-	ReceiverAddress [account.AddressLength]byte `json:"receiverAddress"`
-	Amount          float64                     `json:"amount"`
+	ReceiverAddress [protocol.AddressLength]byte `json:"receiverAddress"`
+	Amount          float64                      `json:"amount"`
 }
 
-func NewCoinbaseTransaction(address [account.AddressLength]byte, amount float64) Transaction {
+func NewCoinbaseTransaction(address [protocol.AddressLength]byte, amount float64) Transaction {
 	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
 	transaction := Transaction{
 		ProtocolVersion: protocol.CurrentProtocolVersion,
@@ -46,7 +52,7 @@ func NewCoinbaseTransaction(address [account.AddressLength]byte, amount float64)
 }
 
 // Hashes a transaction
-func (t Transaction) GetTransactionHash() [crypto.HashLength]byte {
+func (t Transaction) GetTransactionHash() [TransactionHashLength]byte {
 	bytes := t.TransactionToByteArray()
 	return crypto.HashBytes(bytes)
 }
@@ -59,11 +65,17 @@ func (t Transaction) TransactionToByteArray() []byte {
 	versionBytes := util.Uint16ToBytes(t.ProtocolVersion)
 	transactionBytes = append(transactionBytes, versionBytes...)
 
+	numInputBytes := util.Uint16ToBytes(uint16(len(t.Inputs)))
+	transactionBytes = append(transactionBytes, numInputBytes...)
+
 	inputBytes := make([]byte, 0)
 	for _, input := range t.Inputs {
 		inputBytes = append(inputBytes, input.TransactionInputToByteArray()...)
 	}
 	transactionBytes = append(transactionBytes, inputBytes...)
+
+	numOutputBytes := util.Uint16ToBytes(uint16(len(t.Outputs)))
+	transactionBytes = append(transactionBytes, numOutputBytes...)
 
 	outputBytes := make([]byte, 0)
 	for _, output := range t.Outputs {
@@ -83,7 +95,40 @@ func (t Transaction) TransactionToByteArray() []byte {
 // Convertes a byte array back into a Transaction
 // TODO: Check safety of inputs
 func ByteArrayToTransaction(bytes []byte) Transaction {
-	return Transaction{}
+	currentByte := 0
+
+	protocolVersion := util.BytesToUint16(bytes[currentByte : currentByte+ProtocolVersionLength])
+	currentByte += ProtocolVersionLength
+
+	numInputs := int(util.BytesToUint16(bytes[currentByte : currentByte+NumInputOutputLength]))
+	currentByte += NumInputOutputLength
+
+	inputs := []TransactionInput{}
+	for i := 0; i < numInputs; i += 1 {
+		input := ByteArrayToTransactionInput(bytes[currentByte : currentByte+TransactionInputLength])
+		inputs = append(inputs, input)
+		currentByte += TransactionInputLength
+	}
+
+	numOutputs := int(util.BytesToUint16(bytes[currentByte : currentByte+NumInputOutputLength]))
+	currentByte += NumInputOutputLength
+
+	outputs := []TransactionOutput{}
+	for i := 0; i < numOutputs; i += 1 {
+		output := ByteArrayToTransactionOutput(bytes[currentByte : currentByte+TransactionOutputLength])
+		outputs = append(outputs, output)
+		currentByte += TransactionOutputLength
+	}
+
+	timestamp := new(time.Time)
+	timestamp.UnmarshalBinary(bytes[currentByte:])
+
+	return Transaction{
+		ProtocolVersion: protocolVersion,
+		Inputs:          inputs,
+		Outputs:         outputs,
+		Timestamp:       *timestamp,
+	}
 }
 
 // Converts a TransactionInput into a byte array
@@ -103,13 +148,13 @@ func (t TransactionInput) TransactionInputToByteArray() []byte {
 // Coverts a byte array into a TransactionInput
 // TODO: Check safety of inputs
 func ByteArrayToTransactionInput(bytes []byte) TransactionInput {
-	hashBytes := bytes[:crypto.HashLength]
-	indexBytes := bytes[crypto.HashLength : crypto.HashLength+IndexByteSize]
-	signatureBytes := bytes[crypto.HashLength+IndexByteSize:]
+	hashBytes := bytes[:TransactionHashLength]
+	indexBytes := bytes[TransactionHashLength : TransactionHashLength+TransactionIndexLength]
+	signatureBytes := bytes[TransactionHashLength+TransactionIndexLength:]
 
-	var hash [crypto.HashLength]byte
+	var hash [TransactionHashLength]byte
 	var index uint16
-	var signature [crypto.SignatureLength]byte
+	var signature [TransactionSignatureLength]byte
 
 	copy(hash[:], hashBytes)
 	index = util.BytesToUint16(indexBytes)
@@ -138,10 +183,10 @@ func (t TransactionOutput) TransactionOutputToByteArray() []byte {
 // Converts a byte array into a TransactionOutput
 // TODO: Check safety of inputs
 func ByteArrayToTransactionOutput(bytes []byte) TransactionOutput {
-	addressBytes := bytes[:account.AddressLength]
-	amountBytes := bytes[account.AddressLength:]
+	addressBytes := bytes[:protocol.AddressLength]
+	amountBytes := bytes[protocol.AddressLength:]
 
-	var address [account.AddressLength]byte
+	var address [protocol.AddressLength]byte
 	var amount float64
 
 	copy(address[:], addressBytes)

@@ -4,12 +4,11 @@ import (
 	"fmt"
 
 	"github.com/AndrewCLu/TestcoinNode/crypto"
+	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
 
-const AddressLength = 32
-
 type account struct {
-	address           [AddressLength]byte
+	address           [protocol.AddressLength]byte
 	encodedPublicKey  []byte
 	encodedPrivateKey []byte
 }
@@ -28,6 +27,6 @@ func NewAccount() account {
 	return account
 }
 
-func (a account) GetAddress() [AddressLength]byte {
+func (a account) GetAddress() [protocol.AddressLength]byte {
 	return a.address
 }
