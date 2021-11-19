@@ -11,7 +11,7 @@ const SignatureLength = 64
 
 // Hashes and then signs a byte array using an encoded ECDSA private key
 // Returns signature as r and s in byte arrays
-func signByteArray(bytes []byte, encodedPrivateKey []byte) (signature [SignatureLength]byte, err error) {
+func SignByteArray(bytes []byte, encodedPrivateKey []byte) (signature [SignatureLength]byte, err error) {
 	privateKey, decodeErr := decodePrivateKey(encodedPrivateKey)
 	if decodeErr != nil {
 		fmt.Println(decodeErr)
@@ -35,7 +35,7 @@ func signByteArray(bytes []byte, encodedPrivateKey []byte) (signature [Signature
 
 // Verifies a signature using an encoded ECDSA public key
 // Returns true if verified else false
-func verifyByteArray(bytes []byte, encodedPublicKey []byte, signature [SignatureLength]byte) (verified bool, err error) {
+func VerifyByteArray(bytes []byte, encodedPublicKey []byte, signature [SignatureLength]byte) (verified bool, err error) {
 	publicKey, decodeErr := decodePublicKey(encodedPublicKey)
 	if decodeErr != nil {
 		fmt.Println(decodeErr)

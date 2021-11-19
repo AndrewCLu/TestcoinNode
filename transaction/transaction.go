@@ -39,7 +39,18 @@ type TransactionOutput struct {
 	Amount          uint64                       `json:"amount"`
 }
 
-func NewCoinbaseTransaction(address [protocol.AddressLength]byte, amount uint64) Transaction {
+type UnspentTransactionOutput struct {
+	TransactionHash  [TransactionHashLength]byte  `json:"transactionHash"`
+	TransactionIndex uint16                       `json:"transactionIndex"`
+	ReceiverAddress  [protocol.AddressLength]byte `json:"receiverAddress"`
+	Amount           uint64                       `json:"amount"`
+}
+
+// Generates a new coinbase transaction and returns it.
+// Also returns boolean indicating success
+func NewCoinbaseTransaction(
+	address [protocol.AddressLength]byte,
+	amount uint64) (t Transaction, success bool) {
 	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
 	transaction := Transaction{
 		ProtocolVersion: protocol.CurrentProtocolVersion,
@@ -48,7 +59,52 @@ func NewCoinbaseTransaction(address [protocol.AddressLength]byte, amount uint64)
 		Timestamp:       time.Now().Round(0),
 	}
 
-	return transaction
+	return transaction, true
+}
+
+// Generates a new peer transaction and returns it.
+// Also returns boolean indicating success
+func NewPeerTransaction(
+	senderPrivateKey []byte,
+	utxos []UnspentTransactionOutput,
+	outputs []TransactionOutput,
+) (t Transaction, success bool) {
+
+	inputs := []TransactionInput{}
+	inputTotal := uint64(0)
+	for _, utxo := range utxos {
+		transactionInputBytes := append(utxo.TransactionHash[:], util.Uint16ToBytes(utxo.TransactionIndex)...)
+
+		inputTotal += utxo.Amount
+
+		signature, _ := crypto.SignByteArray(transactionInputBytes, senderPrivateKey)
+		input := TransactionInput{
+			PreviousTransactionHash:  utxo.TransactionHash,
+			PreviousTransactionIndex: utxo.TransactionIndex,
+			SenderSignature:          signature,
+		}
+
+		inputs = append(inputs, input)
+	}
+
+	outputTotal := uint64(0)
+	for _, output := range outputs {
+		outputTotal += output.Amount
+	}
+
+	// If inputs and outputs don't match, transaction failed
+	if inputTotal != outputTotal {
+		return Transaction{}, false
+	}
+
+	transaction := Transaction{
+		ProtocolVersion: protocol.CurrentProtocolVersion,
+		Inputs:          inputs,
+		Outputs:         outputs,
+		Timestamp:       time.Now().Round(0),
+	}
+
+	return transaction, true
 }
 
 // Hashes a transaction

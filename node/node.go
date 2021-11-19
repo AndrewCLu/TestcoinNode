@@ -22,7 +22,7 @@ func InitializeNode() {
 func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 	address := account.GetAddress()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
-	transaction := transaction.NewCoinbaseTransaction(address, amount)
+	transaction, _ := transaction.NewCoinbaseTransaction(address, amount)
 	transactionHash := transaction.GetTransactionHash()
 
 	// Add transaction to ledger
