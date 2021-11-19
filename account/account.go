@@ -7,16 +7,16 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
 
-type account struct {
+type Account struct {
 	address           [protocol.AddressLength]byte
 	encodedPublicKey  []byte
 	encodedPrivateKey []byte
 }
 
-func NewAccount() account {
+func NewAccount() Account {
 	// TODO: Must resize length of address if AddressLength and HashLength are not the same
 	address, encodedPublicKey, encodedPrivateKey := crypto.NewDigitalSignatureKeys()
-	account := account{
+	account := Account{
 		address:           address,
 		encodedPublicKey:  encodedPublicKey,
 		encodedPrivateKey: encodedPrivateKey,
@@ -27,6 +27,6 @@ func NewAccount() account {
 	return account
 }
 
-func (a account) GetAddress() [protocol.AddressLength]byte {
+func (a Account) GetAddress() [protocol.AddressLength]byte {
 	return a.address
 }

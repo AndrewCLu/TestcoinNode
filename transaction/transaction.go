@@ -48,7 +48,6 @@ func NewCoinbaseTransaction(address [protocol.AddressLength]byte, amount float64
 		Timestamp:       time.Now().Round(0),
 	}
 
-	fmt.Printf("Coinbase transaction sending %v to %v\n", amount, address)
 	return transaction
 }
 
