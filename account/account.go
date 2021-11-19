@@ -30,3 +30,11 @@ func NewAccount() Account {
 func (a Account) GetAddress() [protocol.AddressLength]byte {
 	return a.address
 }
+
+func (a Account) GetPublicKey() []byte {
+	return a.encodedPublicKey
+}
+
+func (a Account) GetPrivateKey() []byte {
+	return a.encodedPrivateKey
+}

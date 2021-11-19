@@ -22,8 +22,12 @@ func InitializeNode() {
 func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 	address := account.GetAddress()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
-	newTransaction, _ := transaction.NewCoinbaseTransaction(address, amount)
+	newTransaction, success := transaction.NewCoinbaseTransaction(address, amount)
 	transactionHash := newTransaction.GetTransactionHash()
+
+	if !success {
+		return
+	}
 
 	// Add transaction to ledger
 	ledger[transactionHash] = newTransaction
@@ -41,8 +45,37 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 }
 
 // Creates a new peer transaction for a given amount
-func NewPeerTransaction(account account.Account, receiverAddress [protocol.AddressLength]byte, rawAmount float64) {
-	return
+func NewPeerTransaction(account account.Account, receiverAddress [protocol.AddressLength]byte, readableAmount float64) {
+	senderAddress := account.GetAddress()
+	amount := util.Float64UnitToUnit64Unit(readableAmount)
+
+	utxos := unspentOutputs[senderAddress]
+	output := transaction.TransactionOutput{
+		ReceiverAddress: receiverAddress,
+		Amount:          amount,
+	}
+	outputs := []transaction.TransactionOutput{output}
+
+	newTransaction, success := transaction.NewPeerTransaction(account.GetPrivateKey(), utxos, outputs)
+	transactionHash := newTransaction.GetTransactionHash()
+
+	if !success {
+		return
+	}
+
+	// Add transaction to ledger
+	ledger[transactionHash] = newTransaction
+
+	// Record unspent transaction output
+	newOutput := transaction.UnspentTransactionOutput{
+		TransactionHash:  transactionHash,
+		TransactionIndex: uint16(0),
+		ReceiverAddress:  receiverAddress,
+		Amount:           amount,
+	}
+	unspentOutputs[receiverAddress] = append(unspentOutputs[receiverAddress], newOutput)
+
+	fmt.Printf("Coinbase transaction %v sending %v from %v to %v\n", transactionHash, readableAmount, senderAddress, receiverAddress)
 }
 
 func GetAccountValue(account account.Account) float64 {
