@@ -1,8 +1,6 @@
 package account
 
 import (
-	"fmt"
-
 	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
@@ -21,8 +19,6 @@ func NewAccount() Account {
 		encodedPublicKey:  encodedPublicKey,
 		encodedPrivateKey: encodedPrivateKey,
 	}
-
-	fmt.Printf("Created account with address: %v\n", account.address)
 
 	return account
 }

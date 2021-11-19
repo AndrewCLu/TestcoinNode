@@ -2,10 +2,38 @@ package util
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"math"
 
+	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
+
+func AddressToHexString(bytes [protocol.AddressLength]byte) string {
+	return hex.EncodeToString(bytes[:])
+}
+
+func HexStringToAddress(str string) [protocol.AddressLength]byte {
+	var address [protocol.AddressLength]byte
+	decodedBytes, _ := hex.DecodeString(str)
+
+	copy(address[:], decodedBytes)
+
+	return address
+}
+
+func HashToHexString(bytes [crypto.HashLength]byte) string {
+	return hex.EncodeToString(bytes[:])
+}
+
+func HexStringToHash(str string) [crypto.HashLength]byte {
+	var hash [crypto.HashLength]byte
+	decodedBytes, _ := hex.DecodeString(str)
+
+	copy(hash[:], decodedBytes)
+
+	return hash
+}
 
 // TODO: Handle special cases where values are very large
 func Float64UnitToUnit64Unit(value float64) uint64 {

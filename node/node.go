@@ -18,6 +18,15 @@ func InitializeNode() {
 	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput)
 }
 
+// Returns a new account
+func NewAccount() account.Account {
+	account := account.NewAccount()
+
+	fmt.Printf("Created account with address: %v\n", util.AddressToHexString(account.GetAddress()))
+
+	return account
+}
+
 // Creates a new coinbase transaction for a given account
 func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 	address := account.GetAddress()
@@ -41,7 +50,11 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 	}
 	unspentOutputs[address] = append(unspentOutputs[address], output)
 
-	fmt.Printf("Coinbase transaction %v sending %v to %v\n", transactionHash, readableAmount, address)
+	fmt.Printf("Coinbase transaction %v sending %v to %v\n",
+		util.HashToHexString(transactionHash),
+		readableAmount,
+		util.AddressToHexString(address),
+	)
 }
 
 // Creates a new peer transaction for a given amount
@@ -98,10 +111,15 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 			ReceiverAddress:  senderAddress,
 			Amount:           diff,
 		}
-		unspentOutputs[senderAddress] = append(unspentOutputs[senderAddress], senderOutput)
+		unspentOutputs[senderAddress] = []transaction.UnspentTransactionOutput{senderOutput}
 	}
 
-	fmt.Printf("Coinbase transaction %v sending %v from %v to %v\n", transactionHash, readableAmount, senderAddress, receiverAddress)
+	fmt.Printf("Peer transaction %v sending %v from %v to %v\n",
+		util.HashToHexString(transactionHash),
+		readableAmount,
+		util.AddressToHexString(senderAddress),
+		util.AddressToHexString(receiverAddress),
+	)
 }
 
 // Gets the micro unit value of an account based on an address
@@ -121,7 +139,7 @@ func GetReadableAccountValue(account account.Account) float64 {
 	total := GetAccountValue(address)
 	readableTotal := util.Uint64UnitToFloat64Unit(total)
 
-	fmt.Printf("Account with address %v has value %v\n", address, readableTotal)
+	fmt.Printf("Account with address %v has value %v\n", util.AddressToHexString(address), readableTotal)
 
 	return readableTotal
 }
