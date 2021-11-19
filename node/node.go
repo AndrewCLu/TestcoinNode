@@ -11,25 +11,31 @@ import (
 
 // A ledger mapping transaction hashes to transactions
 var ledger map[[transaction.TransactionHashLength]byte]transaction.Transaction
-var unspentOutputs map[[protocol.AddressLength]byte][]transaction.TransactionOutput
+var unspentOutputs map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput
 
 func InitializeNode() {
 	ledger = make(map[[transaction.TransactionHashLength]byte]transaction.Transaction)
-	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.TransactionOutput)
+	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput)
 }
 
 // Creates a new coinbase transaction for a given account
 func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 	address := account.GetAddress()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
-	transaction, _ := transaction.NewCoinbaseTransaction(address, amount)
-	transactionHash := transaction.GetTransactionHash()
+	newTransaction, _ := transaction.NewCoinbaseTransaction(address, amount)
+	transactionHash := newTransaction.GetTransactionHash()
 
 	// Add transaction to ledger
-	ledger[transactionHash] = transaction
+	ledger[transactionHash] = newTransaction
 
 	// Record unspent transaction output
-	unspentOutputs[address] = append(unspentOutputs[address], transaction.Outputs[0])
+	output := transaction.UnspentTransactionOutput{
+		TransactionHash:  transactionHash,
+		TransactionIndex: uint16(0),
+		ReceiverAddress:  address,
+		Amount:           amount,
+	}
+	unspentOutputs[address] = append(unspentOutputs[address], output)
 
 	fmt.Printf("Coinbase transaction %v sending %v to %v\n", transactionHash, readableAmount, address)
 }
