@@ -49,12 +49,27 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 	senderAddress := account.GetAddress()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 
+	senderValue := GetAccountValue(senderAddress)
+	if senderValue < amount {
+		return
+	}
+
+	diff := senderValue - amount
+
 	utxos := unspentOutputs[senderAddress]
-	output := transaction.TransactionOutput{
+	outputReceiver := transaction.TransactionOutput{
 		ReceiverAddress: receiverAddress,
 		Amount:          amount,
 	}
-	outputs := []transaction.TransactionOutput{output}
+	outputSender := transaction.TransactionOutput{
+		ReceiverAddress: senderAddress,
+		Amount:          diff,
+	}
+
+	outputs := []transaction.TransactionOutput{outputReceiver}
+	if diff != 0 {
+		outputs = append(outputs, outputSender)
+	}
 
 	newTransaction, success := transaction.NewPeerTransaction(account.GetPrivateKey(), utxos, outputs)
 	transactionHash := newTransaction.GetTransactionHash()
@@ -66,28 +81,47 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 	// Add transaction to ledger
 	ledger[transactionHash] = newTransaction
 
-	// Record unspent transaction output
-	newOutput := transaction.UnspentTransactionOutput{
+	// Record received unspent transaction output
+	receiverOutput := transaction.UnspentTransactionOutput{
 		TransactionHash:  transactionHash,
 		TransactionIndex: uint16(0),
 		ReceiverAddress:  receiverAddress,
 		Amount:           amount,
 	}
-	unspentOutputs[receiverAddress] = append(unspentOutputs[receiverAddress], newOutput)
+	unspentOutputs[receiverAddress] = append(unspentOutputs[receiverAddress], receiverOutput)
+
+	// Record refund to sender as unspent transaction output
+	if diff != 0 {
+		senderOutput := transaction.UnspentTransactionOutput{
+			TransactionHash:  transactionHash,
+			TransactionIndex: uint16(1),
+			ReceiverAddress:  senderAddress,
+			Amount:           diff,
+		}
+		unspentOutputs[senderAddress] = append(unspentOutputs[senderAddress], senderOutput)
+	}
 
 	fmt.Printf("Coinbase transaction %v sending %v from %v to %v\n", transactionHash, readableAmount, senderAddress, receiverAddress)
 }
 
-func GetAccountValue(account account.Account) float64 {
-	address := account.GetAddress()
-
+// Gets the micro unit value of an account based on an address
+func GetAccountValue(address [protocol.AddressLength]byte) uint64 {
 	total := uint64(0)
 	for _, output := range unspentOutputs[address] {
 		total += output.Amount
 	}
 
+	return total
+}
+
+// Gets the human readable value of an account
+func GetReadableAccountValue(account account.Account) float64 {
+	address := account.GetAddress()
+
+	total := GetAccountValue(address)
 	readableTotal := util.Uint64UnitToFloat64Unit(total)
 
 	fmt.Printf("Account with address %v has value %v\n", address, readableTotal)
+
 	return readableTotal
 }

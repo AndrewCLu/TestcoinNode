@@ -12,10 +12,14 @@ func main() {
 
 	node.InitializeNode()
 
-	account := account.NewAccount()
+	bob := account.NewAccount()
+	alice := account.NewAccount()
 
-	node.NewCoinbaseTransaction(account, 69.69)
-	node.NewCoinbaseTransaction(account, 10)
+	node.NewCoinbaseTransaction(bob, 69.69)
+	node.NewCoinbaseTransaction(bob, 10)
 
-	node.GetAccountValue(account)
+	node.NewPeerTransaction(bob, alice.GetAddress(), 69)
+
+	node.GetReadableAccountValue(bob)
+	node.GetReadableAccountValue(alice)
 }
