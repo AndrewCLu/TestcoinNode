@@ -36,10 +36,10 @@ type TransactionInput struct {
 
 type TransactionOutput struct {
 	ReceiverAddress [protocol.AddressLength]byte `json:"receiverAddress"`
-	Amount          float64                      `json:"amount"`
+	Amount          uint64                       `json:"amount"`
 }
 
-func NewCoinbaseTransaction(address [protocol.AddressLength]byte, amount float64) Transaction {
+func NewCoinbaseTransaction(address [protocol.AddressLength]byte, amount uint64) Transaction {
 	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
 	transaction := Transaction{
 		ProtocolVersion: protocol.CurrentProtocolVersion,
@@ -174,7 +174,7 @@ func (t TransactionOutput) TransactionOutputToByteArray() []byte {
 
 	outputBytes = append(outputBytes, t.ReceiverAddress[:]...)
 
-	amountBytes := util.Float64ToBytes(t.Amount)
+	amountBytes := util.Uint64ToBytes(t.Amount)
 	outputBytes = append(outputBytes, amountBytes...)
 
 	return outputBytes
@@ -187,10 +187,10 @@ func ByteArrayToTransactionOutput(bytes []byte) TransactionOutput {
 	amountBytes := bytes[protocol.AddressLength:]
 
 	var address [protocol.AddressLength]byte
-	var amount float64
+	var amount uint64
 
 	copy(address[:], addressBytes)
-	amount = util.BytesToFloat64(amountBytes)
+	amount = util.BytesToUint64(amountBytes)
 
 	output := TransactionOutput{
 		ReceiverAddress: address,
