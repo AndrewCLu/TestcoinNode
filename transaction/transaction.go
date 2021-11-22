@@ -71,7 +71,7 @@ func NewPeerTransaction(
 ) (t Transaction, success bool) {
 
 	inputs := []TransactionInput{}
-	inputTotal := uint64(0)
+	var inputTotal uint64 = 0
 	for _, utxo := range utxos {
 		signature := SignInput(senderPrivateKey, utxo.TransactionHash, utxo.TransactionIndex)
 
@@ -86,7 +86,7 @@ func NewPeerTransaction(
 		inputs = append(inputs, input)
 	}
 
-	outputTotal := uint64(0)
+	var outputTotal uint64 = 0
 	for _, output := range outputs {
 		outputTotal += output.Amount
 	}

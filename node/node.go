@@ -133,7 +133,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 func ValidateTransaction(senderPublicKey []byte, tx transaction.Transaction) bool {
 	senderAddress := crypto.GetAddressFromPublicKey(senderPublicKey)
 
-	inputTotal := uint64(0)
+	var inputTotal uint64 = 0
 	for _, input := range tx.Inputs {
 		hash := input.PreviousTransactionHash
 		index := input.PreviousTransactionIndex
@@ -168,7 +168,7 @@ func ValidateTransaction(senderPublicKey []byte, tx transaction.Transaction) boo
 		inputTotal += utxo.Amount
 	}
 
-	outputTotal := uint64(0)
+	var outputTotal uint64 = 0
 	for _, output := range tx.Outputs {
 		outputTotal += output.Amount
 	}
@@ -182,7 +182,7 @@ func ValidateTransaction(senderPublicKey []byte, tx transaction.Transaction) boo
 
 // Gets the micro unit value of an account based on an address
 func GetAccountValue(address [protocol.AddressLength]byte) uint64 {
-	total := uint64(0)
+	var total uint64 = 0
 	for _, output := range unspentOutputs[address] {
 		total += output.Amount
 	}
