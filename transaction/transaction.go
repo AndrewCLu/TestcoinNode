@@ -108,7 +108,7 @@ func NewPeerTransaction(
 }
 
 // Hashes a transaction
-func (t Transaction) GetTransactionHash() [TransactionHashLength]byte {
+func (t Transaction) Hash() [TransactionHashLength]byte {
 	bytes := t.TransactionToByteArray()
 	return crypto.HashBytes(bytes)
 }
@@ -257,6 +257,14 @@ func ByteArrayToTransactionOutput(bytes []byte) TransactionOutput {
 }
 
 // Checks if two transactions are equal
-func AreTransactionsEqual(ta Transaction, tb Transaction) bool {
-	return reflect.DeepEqual(ta.GetTransactionHash(), tb.GetTransactionHash())
+func (ta Transaction) Equal(tb Transaction) bool {
+	return reflect.DeepEqual(ta.Hash(), tb.Hash())
+}
+
+// Checks if two unspent transaction outputs are equal
+func (utxoa UnspentTransactionOutput) Equal(utxob UnspentTransactionOutput) bool {
+	return reflect.DeepEqual(utxoa.TransactionHash, utxob.TransactionHash) &&
+		utxoa.TransactionIndex == utxob.TransactionIndex &&
+		reflect.DeepEqual(utxoa.ReceiverAddress, utxob.ReceiverAddress) &&
+		utxoa.Amount == utxob.Amount
 }

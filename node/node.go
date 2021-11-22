@@ -32,7 +32,7 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 	address := account.GetAddress()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 	newTransaction, success := transaction.NewCoinbaseTransaction(address, amount)
-	transactionHash := newTransaction.GetTransactionHash()
+	transactionHash := newTransaction.Hash()
 
 	if !success {
 		return
@@ -85,7 +85,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 	}
 
 	newTransaction, success := transaction.NewPeerTransaction(account.GetPrivateKey(), utxos, outputs)
-	transactionHash := newTransaction.GetTransactionHash()
+	transactionHash := newTransaction.Hash()
 
 	if !success {
 		return
@@ -120,6 +120,13 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		util.AddressToHexString(senderAddress),
 		util.AddressToHexString(receiverAddress),
 	)
+}
+
+// Returns if a transaction is valid or not based on the state of the ledger
+func ValidateTransaction(senderAddress address [protocol.AddressLength]byte, transaction Transaction) bool {
+	inputTotal := uint64(0)
+	for 
+	outputTotal := uint64(0)
 }
 
 // Gets the micro unit value of an account based on an address
