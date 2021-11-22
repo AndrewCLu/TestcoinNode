@@ -17,7 +17,7 @@ func TestTransactionToByteArray(t *testing.T) {
 
 	decodedTransaction := ByteArrayToTransaction(transactionBytes)
 
-	if !AreTransactionsEqual(transaction, decodedTransaction) {
+	if !transaction.Equal(decodedTransaction) {
 		t.Fatalf(`Decoded transaction is not equal to original. Original: %v, Decoded: %v`, transaction, decodedTransaction)
 	}
 }
