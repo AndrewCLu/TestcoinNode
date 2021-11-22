@@ -155,8 +155,8 @@ func ValidateTransaction(senderPublicKey []byte, tx transaction.Transaction) boo
 
 		// Find if a current utxo matches the one implied by the transaction
 		match := false
-		for _, compareUtxo := range unspentOutputs[senderAddress] {
-			if utxo.Equal(compareUtxo) {
+		for _, compareUTXO := range unspentOutputs[senderAddress] {
+			if utxo.Equal(compareUTXO) {
 				match = true
 			}
 		}
