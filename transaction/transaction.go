@@ -73,11 +73,10 @@ func NewPeerTransaction(
 	inputs := []TransactionInput{}
 	inputTotal := uint64(0)
 	for _, utxo := range utxos {
-		transactionInputBytes := append(utxo.TransactionHash[:], util.Uint16ToBytes(utxo.TransactionIndex)...)
+		signature := SignInput(senderPrivateKey, utxo.TransactionHash, utxo.TransactionIndex)
 
 		inputTotal += utxo.Amount
 
-		signature, _ := crypto.SignByteArray(transactionInputBytes, senderPrivateKey)
 		input := TransactionInput{
 			PreviousTransactionHash:  utxo.TransactionHash,
 			PreviousTransactionIndex: utxo.TransactionIndex,
@@ -105,12 +104,6 @@ func NewPeerTransaction(
 	}
 
 	return transaction, true
-}
-
-// Hashes a transaction
-func (t Transaction) Hash() [TransactionHashLength]byte {
-	bytes := t.TransactionToByteArray()
-	return crypto.HashBytes(bytes)
 }
 
 // Takes a transaction and returns a byte array representing the transaction
@@ -254,6 +247,36 @@ func ByteArrayToTransactionOutput(bytes []byte) TransactionOutput {
 	}
 
 	return output
+}
+
+// Signs a transaction input
+func SignInput(privateKey []byte,
+	hash [TransactionHashLength]byte,
+	index uint16,
+) (signature [TransactionSignatureLength]byte) {
+	inputBytes := append(hash[:], util.Uint16ToBytes(index)...)
+
+	signature, _ = crypto.SignByteArray(inputBytes, privateKey)
+
+	return signature
+}
+
+// Verifies the signature of a transaction input
+func VerifyInput(publicKey []byte,
+	hash [TransactionHashLength]byte,
+	index uint16, signature [TransactionSignatureLength]byte,
+) (verified bool) {
+	inputBytes := append(hash[:], util.Uint16ToBytes(index)...)
+
+	verified, _ = crypto.VerifyByteArray(inputBytes, publicKey, signature)
+
+	return verified
+}
+
+// Hashes a transaction
+func (t Transaction) Hash() [TransactionHashLength]byte {
+	bytes := t.TransactionToByteArray()
+	return crypto.HashBytes(bytes)
 }
 
 // Checks if two transactions are equal

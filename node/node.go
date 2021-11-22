@@ -123,9 +123,20 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 }
 
 // Returns if a transaction is valid or not based on the state of the ledger
+// TODO: Make verifications of utxos existing in ledger more efficient
+// TODO: Safety checks
 func ValidateTransaction(senderAddress address [protocol.AddressLength]byte, transaction Transaction) bool {
 	inputTotal := uint64(0)
-	for 
+	for _, input := range transaction.Inputs {
+		previousTransaction := ledger[input.PreviousTransactionHash]
+		previousTransactionOutput := previousTransaction.Outputs[input.PreviousTransactionIndex]
+		utxo := transaction.UnspentTransactionOutput{
+			TransactionHash:  input.PreviousTransactionHash,
+			TransactionIndex: input.PreviousTransactionIndex,
+			ReceiverAddress:  previousTransactionOutput.ReceiverAddress,
+			Amount:           previousTransactionOutput.Amount,
+		}
+	}
 	outputTotal := uint64(0)
 }
 
