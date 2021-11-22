@@ -12,9 +12,13 @@ func NewDigitalSignatureKeys() (address [HashLength]byte, encodedPublicKey []byt
 
 	encodedPublicKey, _ = encodePublicKey(publicKey)
 	encodedPrivateKey, _ = encodePrivateKey(privateKey)
-	address = HashBytes(encodedPublicKey)
+	address = GetAddressFromPublicKey(encodedPublicKey)
 
 	return address, encodedPublicKey, encodedPrivateKey
+}
+
+func GetAddressFromPublicKey(publicKey []byte) (address [HashLength]byte) {
+	return HashBytes(publicKey)
 }
 
 // Hashes bytes using SHA256

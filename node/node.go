@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/AndrewCLu/TestcoinNode/account"
+	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
@@ -125,19 +126,54 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 // Returns if a transaction is valid or not based on the state of the ledger
 // TODO: Make verifications of utxos existing in ledger more efficient
 // TODO: Safety checks
-func ValidateTransaction(senderAddress address [protocol.AddressLength]byte, transaction Transaction) bool {
+func ValidateTransaction(senderPublicKey []byte, tx transaction.Transaction) bool {
+	senderAddress := crypto.GetAddressFromPublicKey(senderPublicKey)
+
 	inputTotal := uint64(0)
-	for _, input := range transaction.Inputs {
-		previousTransaction := ledger[input.PreviousTransactionHash]
-		previousTransactionOutput := previousTransaction.Outputs[input.PreviousTransactionIndex]
+	for _, input := range tx.Inputs {
+		hash := input.PreviousTransactionHash
+		index := input.PreviousTransactionIndex
+		signature := input.SenderSignature
+
+		previousTransaction := ledger[hash]
+		previousTransactionOutput := previousTransaction.Outputs[index]
 		utxo := transaction.UnspentTransactionOutput{
-			TransactionHash:  input.PreviousTransactionHash,
-			TransactionIndex: input.PreviousTransactionIndex,
+			TransactionHash:  hash,
+			TransactionIndex: index,
 			ReceiverAddress:  previousTransactionOutput.ReceiverAddress,
 			Amount:           previousTransactionOutput.Amount,
 		}
+
+		// Check if input is provided by the sender
+		if !transaction.VerifyInput(senderPublicKey, hash, index, signature) {
+			return false
+		}
+
+		// Find if a current utxo matches the one implied by the transaction
+		match := false
+		for _, compareUtxo := range unspentOutputs[senderAddress] {
+			if utxo.Equal(compareUtxo) {
+				match = true
+			}
+		}
+
+		if !match {
+			return false
+		}
+
+		inputTotal += utxo.Amount
 	}
+
 	outputTotal := uint64(0)
+	for _, output := range tx.Outputs {
+		outputTotal += output.Amount
+	}
+
+	if inputTotal != outputTotal {
+		return false
+	}
+
+	return true
 }
 
 // Gets the micro unit value of an account based on an address
