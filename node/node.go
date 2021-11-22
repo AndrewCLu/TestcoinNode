@@ -33,11 +33,13 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 	address := account.GetAddress()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 	newTransaction, success := transaction.NewCoinbaseTransaction(address, amount)
-	transactionHash := newTransaction.Hash()
 
-	if !success {
+	if !success || !ValidateTransaction(account.GetPublicKey(), newTransaction) {
+		fmt.Printf("Attempted to create new coinbase transaction and FAILED")
 		return
 	}
+
+	transactionHash := newTransaction.Hash()
 
 	// Add transaction to ledger
 	ledger[transactionHash] = newTransaction
@@ -86,11 +88,13 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 	}
 
 	newTransaction, success := transaction.NewPeerTransaction(account.GetPrivateKey(), utxos, outputs)
-	transactionHash := newTransaction.Hash()
 
-	if !success {
+	if !success || !ValidateTransaction(account.GetPublicKey(), newTransaction) {
+		fmt.Printf("Attempted to create new peer transaction and FAILED")
 		return
 	}
+
+	transactionHash := newTransaction.Hash()
 
 	// Add transaction to ledger
 	ledger[transactionHash] = newTransaction
