@@ -173,7 +173,7 @@ func ValidateTransaction(senderPublicKey []byte, tx transaction.Transaction) boo
 		outputTotal += output.Amount
 	}
 
-	if inputTotal != outputTotal {
+	if len(tx.Inputs) != 0 && inputTotal != outputTotal {
 		return false
 	}
 
