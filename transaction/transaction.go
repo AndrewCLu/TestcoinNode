@@ -32,13 +32,13 @@ type Transaction struct {
 type TransactionInput struct {
 	PreviousTransactionHash  [TransactionHashLength]byte  `json:"previousTransactionHash"`
 	PreviousTransactionIndex uint16                       `json:"previousTransactionIndex"`
-	VerificationLength       uint16                       `json:"verificationLength`
-	Verification             TransactionInputVerification `json:"transactionInputVerification`
+	VerificationLength       uint16                       `json:"verificationLength"`
+	Verification             TransactionInputVerification `json:"verification"`
 }
 
 type TransactionInputVerification struct {
 	Signature        [TransactionSignatureLength]byte `json:"signature"`
-	EncodedPublicKey []byte                           `json:"encodedPublicKey`
+	EncodedPublicKey []byte                           `json:"encodedPublicKey"`
 }
 
 type TransactionOutput struct {
