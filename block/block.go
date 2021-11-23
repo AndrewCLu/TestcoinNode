@@ -2,6 +2,7 @@ package block
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
@@ -24,6 +25,35 @@ type BlockHeader struct {
 	Timestamp           time.Time                   `json:"timestamp"`
 	Target              [protocol.TargetLength]byte `json:"target"`
 	Nonce               uint32                      `json:"nonce"`
+}
+
+func NewBlock(currentBlockNumber uint64, previousBlockHash [crypto.HashLength]byte, transactions []transaction.Transaction) (Block, error) {
+	if len(transactions) > protocol.MaxTransactionsInBlock {
+		return Block{}, errors.New("Number of transactions exceeds max allowable.")
+	}
+
+	var transactionHashes [][]byte
+	for i, tx := range transactions {
+		hash := tx.Hash()
+		transactionHashes[i] = hash[:]
+	}
+	allTransactionsHash := crypto.HashBytes(util.ConcatByteSlices(transactionHashes))
+
+	header := BlockHeader{
+		ProtocolVersion:     protocol.CurrentProtocolVersion,
+		PreviousBlockHash:   previousBlockHash,
+		AllTransactionsHash: allTransactionsHash,
+		Timestamp:           time.Now().Round(0),
+		Target:              protocol.ComputeTarget(currentBlockNumber),
+		Nonce:               uint32(0),
+	}
+
+	block := Block{
+		Header: header,
+		Body:   transactions,
+	}
+
+	return block, nil
 }
 
 // Given a block header, compute the nonce that results in a hash under the desired target
