@@ -46,20 +46,29 @@ func Uint64UnitToFloat64Unit(value uint64) float64 {
 }
 
 // TODO: Safety checks on inputs
-func Float64ToBytes(value float64) []byte {
-	bits := math.Float64bits(value)
-	bytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(bytes, bits)
+func Uint16ToBytes(value uint16) []byte {
+	bytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(bytes, value)
 
 	return bytes
 }
 
 // TODO: Safety checks on inputs
-func BytesToFloat64(bytes []byte) float64 {
-	bits := binary.BigEndian.Uint64(bytes)
-	float := math.Float64frombits(bits)
+func BytesToUint16(bytes []byte) uint16 {
+	return binary.BigEndian.Uint16(bytes)
+}
 
-	return float
+// TODO: Safety checks on inputs
+func Uint32ToBytes(value uint32) []byte {
+	bytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(bytes, value)
+
+	return bytes
+}
+
+// TODO: Safety checks on inputs
+func BytesToUint32(bytes []byte) uint32 {
+	return binary.BigEndian.Uint32(bytes)
 }
 
 // TODO: Safety checks on inputs
@@ -76,14 +85,18 @@ func BytesToUint64(bytes []byte) uint64 {
 }
 
 // TODO: Safety checks on inputs
-func Uint16ToBytes(value uint16) []byte {
-	bytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(bytes, value)
+func Float64ToBytes(value float64) []byte {
+	bits := math.Float64bits(value)
+	bytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(bytes, bits)
 
 	return bytes
 }
 
 // TODO: Safety checks on inputs
-func BytesToUint16(bytes []byte) uint16 {
-	return binary.BigEndian.Uint16(bytes)
+func BytesToFloat64(bytes []byte) float64 {
+	bits := binary.BigEndian.Uint64(bytes)
+	float := math.Float64frombits(bits)
+
+	return float
 }
