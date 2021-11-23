@@ -33,7 +33,7 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 	newTransaction, success := transaction.NewCoinbaseTransaction(address, amount)
 
-	if !success || !ValidateTransaction(account.GetPublicKey(), newTransaction) {
+	if !success || !ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new coinbase transaction and FAILED")
 		return
 	}
@@ -86,9 +86,9 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		outputs = append(outputs, outputSender)
 	}
 
-	newTransaction, success := transaction.NewPeerTransaction(account.GetPrivateKey(), utxos, outputs)
+	newTransaction, success := transaction.NewPeerTransaction(account.GetPublicKey(), account.GetPrivateKey(), utxos, outputs)
 
-	if !success || !ValidateTransaction(account.GetPublicKey(), newTransaction) {
+	if !success || !ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new peer transaction and FAILED")
 		return
 	}
@@ -129,14 +129,15 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 // Returns if a transaction is valid or not based on the state of the ledger
 // TODO: Make verifications of utxos existing in ledger more efficient
 // TODO: Safety checks
-func ValidateTransaction(senderPublicKey []byte, tx transaction.Transaction) bool {
-	senderAddress := account.GetAddressFromPublicKey(senderPublicKey)
-
+func ValidateTransaction(tx transaction.Transaction) bool {
 	var inputTotal uint64 = 0
 	for _, input := range tx.Inputs {
 		hash := input.PreviousTransactionHash
 		index := input.PreviousTransactionIndex
-		signature := input.SenderSignature
+		verification := input.Verification
+		signature := verification.Signature
+		senderPublicKey := verification.EncodedPublicKey
+		senderAddress := account.GetAddressFromPublicKey(senderPublicKey)
 
 		previousTransaction := ledger[hash]
 		previousTransactionOutput := previousTransaction.Outputs[index]
