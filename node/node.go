@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/AndrewCLu/TestcoinNode/account"
-	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
@@ -131,7 +130,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 // TODO: Make verifications of utxos existing in ledger more efficient
 // TODO: Safety checks
 func ValidateTransaction(senderPublicKey []byte, tx transaction.Transaction) bool {
-	senderAddress := crypto.GetAddressFromPublicKey(senderPublicKey)
+	senderAddress := account.GetAddressFromPublicKey(senderPublicKey)
 
 	var inputTotal uint64 = 0
 	for _, input := range tx.Inputs {

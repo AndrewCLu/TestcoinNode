@@ -12,8 +12,9 @@ type Account struct {
 }
 
 func NewAccount() Account {
-	// TODO: Must resize length of address if AddressLength and HashLength are not the same
-	address, encodedPublicKey, encodedPrivateKey := crypto.NewDigitalSignatureKeys()
+	encodedPublicKey, encodedPrivateKey := crypto.NewDigitalSignatureKeys()
+	address := GetAddressFromPublicKey(encodedPublicKey)
+
 	account := Account{
 		address:           address,
 		encodedPublicKey:  encodedPublicKey,
@@ -21,6 +22,10 @@ func NewAccount() Account {
 	}
 
 	return account
+}
+
+func GetAddressFromPublicKey(publicKey []byte) (address [protocol.AddressLength]byte) {
+	return crypto.HashBytes(publicKey)
 }
 
 func (a Account) GetAddress() [protocol.AddressLength]byte {

@@ -7,18 +7,13 @@ import (
 const HashLength = 32
 
 // Generates digital signature, including a 32 byte address, public key, and private key
-func NewDigitalSignatureKeys() (address [HashLength]byte, encodedPublicKey []byte, encodedPrivateKey []byte) {
+func NewDigitalSignatureKeys() (encodedPublicKey []byte, encodedPrivateKey []byte) {
 	publicKey, privateKey, _ := newECDSAKeyPair()
 
 	encodedPublicKey, _ = encodePublicKey(publicKey)
 	encodedPrivateKey, _ = encodePrivateKey(privateKey)
-	address = GetAddressFromPublicKey(encodedPublicKey)
 
-	return address, encodedPublicKey, encodedPrivateKey
-}
-
-func GetAddressFromPublicKey(publicKey []byte) (address [HashLength]byte) {
-	return HashBytes(publicKey)
+	return encodedPublicKey, encodedPrivateKey
 }
 
 // Hashes bytes using SHA256
