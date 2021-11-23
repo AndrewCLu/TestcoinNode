@@ -4,16 +4,27 @@ import (
 	"fmt"
 
 	"github.com/AndrewCLu/TestcoinNode/account"
+	"github.com/AndrewCLu/TestcoinNode/block"
+	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-// A ledger mapping transaction hashes to transactions
-var ledger map[[transaction.TransactionHashLength]byte]transaction.Transaction
+var blocks map[[crypto.HashLength]byte]block.Block
+var lastBlockHash [crypto.HashLength]byte
+var pendingTransactions []transaction.Transaction                              // All transactions that have not been processed yet
+var ledger map[[transaction.TransactionHashLength]byte]transaction.Transaction // A ledger mapping transaction hashes to transactions
 var unspentOutputs map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput
 
 func InitializeNode() {
+	genesisBlock, _ := block.NewBlock(0, crypto.HashBytes([]byte("first")), []transaction.Transaction{})
+	genesisBlockHash := genesisBlock.Hash()
+	blocks = make(map[[crypto.HashLength]byte]block.Block)
+	blocks[genesisBlockHash] = genesisBlock
+	lastBlockHash = genesisBlockHash
+
+	pendingTransactions = []transaction.Transaction{}
 	ledger = make(map[[transaction.TransactionHashLength]byte]transaction.Transaction)
 	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput)
 }
