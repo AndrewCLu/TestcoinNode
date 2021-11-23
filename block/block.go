@@ -1,7 +1,9 @@
 package block
 
 import (
+	"bytes"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/AndrewCLu/TestcoinNode/crypto"
@@ -19,8 +21,28 @@ type BlockHeader struct {
 	PreviousBlockHash   [crypto.HashLength]byte `json:"previousBlockHash"`
 	AllTransactionsHash [crypto.HashLength]byte `json:"allTransactionsHash"`
 	Timestamp           time.Time               `json:"timestamp"`
-	Target              uint32                  `json:"target"`
+	Target              [crypto.HashLength]byte `json:"target"`
 	Nonce               uint32                  `json:"nonce"`
+}
+
+func (header BlockHeader) Solve() uint32 {
+	var nonce uint32 = rand.Uint32()
+	target := header.Target[:]
+
+	for true {
+		header.Nonce = nonce
+		hash := header.Hash()
+		fmt.Printf("Trying nonce %v, yielding hash %v", nonce, hash)
+
+		if bytes.Compare(hash[:], target) < 0 {
+			fmt.Printf("Successfully found nonce %v, yielding hash %v", nonce, hash)
+			return nonce
+		}
+
+		nonce += 1
+	}
+
+	return nonce
 }
 
 func (header BlockHeader) BlockHeaderToByteArray() []byte {
@@ -35,7 +57,7 @@ func (header BlockHeader) BlockHeaderToByteArray() []byte {
 		fmt.Printf("Error occurred creating byte array for transaction timestamp: %v\n", err)
 	}
 
-	targetBytes := util.Uint32ToBytes(header.Target)
+	targetBytes := header.Target[:]
 
 	nonceBytes := util.Uint32ToBytes(header.Nonce)
 
