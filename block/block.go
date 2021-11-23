@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/AndrewCLu/TestcoinNode/crypto"
+	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
@@ -17,44 +18,52 @@ type Block struct {
 }
 
 type BlockHeader struct {
-	ProtocolVersion     uint16                  `json:"protocolVersion"`
-	PreviousBlockHash   [crypto.HashLength]byte `json:"previousBlockHash"`
-	AllTransactionsHash [crypto.HashLength]byte `json:"allTransactionsHash"`
-	Timestamp           time.Time               `json:"timestamp"`
-	Target              [crypto.HashLength]byte `json:"target"`
-	Nonce               uint32                  `json:"nonce"`
+	ProtocolVersion     uint16                      `json:"protocolVersion"`
+	PreviousBlockHash   [crypto.HashLength]byte     `json:"previousBlockHash"`
+	AllTransactionsHash [crypto.HashLength]byte     `json:"allTransactionsHash"`
+	Timestamp           time.Time                   `json:"timestamp"`
+	Target              [protocol.TargetLength]byte `json:"target"`
+	Nonce               uint32                      `json:"nonce"`
 }
 
-func (header BlockHeader) Solve() int64 {
+// Given a block header, compute the nonce that results in a hash under the desired target
+func (header BlockHeader) Solve() uint32 {
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)
 	var nonce uint32 = r.Uint32()
-	target := header.Target[:]
+
+	var target [crypto.HashLength]byte
+	for i := 0; i < protocol.TargetLength; i++ {
+		target[i] = header.Target[i]
+	}
+	for i := protocol.TargetLength; i < crypto.HashLength; i++ {
+		target[i] = byte(255)
+	}
+	targetBytes := target[:]
 
 	t1 := time.Now()
-	// fmt.Printf("Solving with target %v ...\n", util.HashToHexString(header.Target))
-	count := 0
+	fmt.Printf("Solving with target %v ...\n", util.HashToHexString(target))
 
+	count := 0
 	for true {
 		count += 1
 		header.Nonce = nonce
 		hash := header.Hash()
+
 		// fmt.Printf("Trying nonce %v, yielding hash %v\n", nonce, util.HashToHexString(hash))
 
-		if bytes.Compare(hash[:], target) < 0 {
+		if bytes.Compare(hash[:], targetBytes) < 0 {
 			t2 := time.Now()
 			diff := t2.Sub(t1)
 
-			// fmt.Printf("Successfully found nonce %v with %v tries in time %v, yielding hash %v\n", nonce, count, diff, util.HashToHexString(hash))
-			return int64(diff / time.Second)
+			fmt.Printf("Successfully found nonce %v with %v tries in time %v, yielding hash %v\n", nonce, count, diff, util.HashToHexString(hash))
+			return nonce
 		}
 
 		nonce += 1
 	}
 
-	t3 := time.Now()
-	diff2 := t3.Sub(t1)
-	return int64(diff2 / time.Second)
+	return nonce
 }
 
 func (header BlockHeader) BlockHeaderToByteArray() []byte {

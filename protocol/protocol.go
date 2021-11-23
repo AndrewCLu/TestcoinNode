@@ -7,7 +7,9 @@ const AddressLength = 32
 
 const TestcoinUnitMultipler = 1000000000 // Actual account values are 1000000000 times less than the transaction amount values
 
+const TargetLength = 4
+
 // Given the current block number, returns the appropriate target for solving proof of work
-func DifficultyTargetFormula(blockNumber int) (target uint32) {
-	return uint32(4)
+func TargetFormula(blockNumber int) (target [TargetLength]byte) {
+	return [4]byte{0, 0, 0, 15}
 }
