@@ -122,36 +122,37 @@ func NewPeerTransaction(
 // Takes a transaction and returns a byte array representing the transaction
 // TODO: Make the byte array conversion more efficient by preallocation
 func (t Transaction) TransactionToByteArray() []byte {
-	transactionBytes := make([]byte, 0)
-
 	versionBytes := util.Uint16ToBytes(t.ProtocolVersion)
-	transactionBytes = append(transactionBytes, versionBytes...)
 
 	numInputBytes := util.Uint16ToBytes(uint16(len(t.Inputs)))
-	transactionBytes = append(transactionBytes, numInputBytes...)
 
 	inputBytes := make([]byte, 0)
 	for _, input := range t.Inputs {
 		inputBytes = append(inputBytes, input.TransactionInputToByteArray()...)
 	}
-	transactionBytes = append(transactionBytes, inputBytes...)
 
 	numOutputBytes := util.Uint16ToBytes(uint16(len(t.Outputs)))
-	transactionBytes = append(transactionBytes, numOutputBytes...)
 
 	outputBytes := make([]byte, 0)
 	for _, output := range t.Outputs {
 		outputBytes = append(outputBytes, output.TransactionOutputToByteArray()...)
 	}
-	transactionBytes = append(transactionBytes, outputBytes...)
 
 	timeBytes, err := t.Timestamp.MarshalBinary()
 	if err != nil {
 		fmt.Printf("Error occurred creating byte array for transaction timestamp: %v\n", err)
 	}
-	transactionBytes = append(transactionBytes, timeBytes...)
 
-	return transactionBytes
+	allBytes := [][]byte{
+		versionBytes,
+		numInputBytes,
+		inputBytes,
+		numOutputBytes,
+		outputBytes,
+		timeBytes,
+	}
+
+	return util.ConcatByteSlices(allBytes)
 }
 
 // Convertes a byte array back into a Transaction
@@ -199,20 +200,22 @@ func ByteArrayToTransaction(bytes []byte) Transaction {
 
 // Converts a TransactionInput into a byte array
 func (t TransactionInput) TransactionInputToByteArray() []byte {
-	inputBytes := make([]byte, 0)
-
-	inputBytes = append(inputBytes, t.PreviousTransactionHash[:]...)
+	hashBytes := t.PreviousTransactionHash[:]
 
 	indexBytes := util.Uint16ToBytes(t.PreviousTransactionIndex)
-	inputBytes = append(inputBytes, indexBytes...)
 
 	verificationLengthBytes := util.Uint16ToBytes(t.VerificationLength)
-	inputBytes = append(inputBytes, verificationLengthBytes...)
 
 	verificationBytes := t.Verification.TransactionInputVerificationToByteArray()
-	inputBytes = append(inputBytes, verificationBytes...)
 
-	return inputBytes
+	allBytes := [][]byte{
+		hashBytes,
+		indexBytes,
+		verificationLengthBytes,
+		verificationBytes,
+	}
+
+	return util.ConcatByteSlices(allBytes)
 }
 
 // Coverts a byte array into a TransactionInput
@@ -252,13 +255,16 @@ func ByteArrayToTransactionInput(bytes []byte) TransactionInput {
 }
 
 func (t TransactionInputVerification) TransactionInputVerificationToByteArray() []byte {
-	verificationBytes := make([]byte, 0)
+	signatureBytes := t.Signature[:]
 
-	verificationBytes = append(verificationBytes, t.Signature[:]...)
+	publicKeyBytes := t.EncodedPublicKey
 
-	verificationBytes = append(verificationBytes, t.EncodedPublicKey...)
+	allBytes := [][]byte{
+		signatureBytes,
+		publicKeyBytes,
+	}
 
-	return verificationBytes
+	return util.ConcatByteSlices(allBytes)
 }
 
 func ByteArrayToTransactionInputVerification(bytes []byte) TransactionInputVerification {
@@ -277,14 +283,16 @@ func ByteArrayToTransactionInputVerification(bytes []byte) TransactionInputVerif
 }
 
 func (t TransactionOutput) TransactionOutputToByteArray() []byte {
-	outputBytes := make([]byte, 0)
-
-	outputBytes = append(outputBytes, t.ReceiverAddress[:]...)
+	addressBytes := t.ReceiverAddress[:]
 
 	amountBytes := util.Uint64ToBytes(t.Amount)
-	outputBytes = append(outputBytes, amountBytes...)
 
-	return outputBytes
+	allBytes := [][]byte{
+		addressBytes,
+		amountBytes,
+	}
+
+	return util.ConcatByteSlices(allBytes)
 }
 
 // Converts a byte array into a TransactionOutput
@@ -333,8 +341,7 @@ func VerifyInput(publicKey []byte,
 
 // Hashes a transaction
 func (t Transaction) Hash() [TransactionHashLength]byte {
-	bytes := t.TransactionToByteArray()
-	return crypto.HashBytes(bytes)
+	return crypto.HashBytes(t.TransactionToByteArray())
 }
 
 // Checks if two transactions are equal

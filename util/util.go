@@ -35,6 +35,22 @@ func HexStringToHash(str string) [crypto.HashLength]byte {
 	return hash
 }
 
+func ConcatByteSlices(slices [][]byte) []byte {
+	var totalLen int
+	for _, s := range slices {
+		totalLen += len(s)
+	}
+
+	allBytes := make([]byte, totalLen)
+
+	var i int
+	for _, s := range slices {
+		i += copy(allBytes[i:], s)
+	}
+
+	return allBytes
+}
+
 // TODO: Handle special cases where values are very large
 func Float64UnitToUnit64Unit(value float64) uint64 {
 	return uint64(value * protocol.TestcoinUnitMultipler)
