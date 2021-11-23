@@ -10,7 +10,6 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-const ProtocolVersionLength = 2
 const NumInputOutputLength = 2
 
 const TransactionHashLength = crypto.HashLength
@@ -26,7 +25,7 @@ type Transaction struct {
 	ProtocolVersion uint16              `json:"protocolVersion"`
 	Inputs          []TransactionInput  `json:"inputs"`
 	Outputs         []TransactionOutput `json:"outputs"`
-	Timestamp       time.Time           `json:"time"`
+	Timestamp       time.Time           `json:"timestamp"`
 }
 
 type TransactionInput struct {
@@ -160,8 +159,8 @@ func (t Transaction) TransactionToByteArray() []byte {
 func ByteArrayToTransaction(bytes []byte) Transaction {
 	currentByte := 0
 
-	protocolVersion := util.BytesToUint16(bytes[currentByte : currentByte+ProtocolVersionLength])
-	currentByte += ProtocolVersionLength
+	protocolVersion := util.BytesToUint16(bytes[currentByte : currentByte+protocol.ProtocolVersionLength])
+	currentByte += protocol.ProtocolVersionLength
 
 	numInputs := int(util.BytesToUint16(bytes[currentByte : currentByte+NumInputOutputLength]))
 	currentByte += NumInputOutputLength
