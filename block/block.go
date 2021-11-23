@@ -25,24 +25,36 @@ type BlockHeader struct {
 	Nonce               uint32                  `json:"nonce"`
 }
 
-func (header BlockHeader) Solve() uint32 {
-	var nonce uint32 = rand.Uint32()
+func (header BlockHeader) Solve() int64 {
+	source := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(source)
+	var nonce uint32 = r.Uint32()
 	target := header.Target[:]
 
+	t1 := time.Now()
+	// fmt.Printf("Solving with target %v ...\n", util.HashToHexString(header.Target))
+	count := 0
+
 	for true {
+		count += 1
 		header.Nonce = nonce
 		hash := header.Hash()
-		fmt.Printf("Trying nonce %v, yielding hash %v", nonce, hash)
+		// fmt.Printf("Trying nonce %v, yielding hash %v\n", nonce, util.HashToHexString(hash))
 
 		if bytes.Compare(hash[:], target) < 0 {
-			fmt.Printf("Successfully found nonce %v, yielding hash %v", nonce, hash)
-			return nonce
+			t2 := time.Now()
+			diff := t2.Sub(t1)
+
+			// fmt.Printf("Successfully found nonce %v with %v tries in time %v, yielding hash %v\n", nonce, count, diff, util.HashToHexString(hash))
+			return int64(diff / time.Second)
 		}
 
 		nonce += 1
 	}
 
-	return nonce
+	t3 := time.Now()
+	diff2 := t3.Sub(t1)
+	return int64(diff2 / time.Second)
 }
 
 func (header BlockHeader) BlockHeaderToByteArray() []byte {
