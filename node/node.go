@@ -4,29 +4,14 @@ import (
 	"fmt"
 
 	"github.com/AndrewCLu/TestcoinNode/account"
-	"github.com/AndrewCLu/TestcoinNode/block"
-	"github.com/AndrewCLu/TestcoinNode/crypto"
+	"github.com/AndrewCLu/TestcoinNode/chain"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-var blocks map[[crypto.HashLength]byte]block.Block
-var lastBlockHash [crypto.HashLength]byte
-var pendingTransactions []transaction.Transaction                              // All transactions that have not been processed yet
-var ledger map[[transaction.TransactionHashLength]byte]transaction.Transaction // A ledger mapping transaction hashes to transactions
-var unspentOutputs map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput
-
 func InitializeNode() {
-	genesisBlock, _ := block.NewBlock(0, crypto.HashBytes([]byte("first")), []transaction.Transaction{})
-	genesisBlockHash := genesisBlock.Hash()
-	blocks = make(map[[crypto.HashLength]byte]block.Block)
-	blocks[genesisBlockHash] = genesisBlock
-	lastBlockHash = genesisBlockHash
-
-	pendingTransactions = []transaction.Transaction{}
-	ledger = make(map[[transaction.TransactionHashLength]byte]transaction.Transaction)
-	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput)
+	chain.InitializeChain()
 }
 
 // Returns a new account
@@ -135,60 +120,6 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		util.AddressToHexString(senderAddress),
 		util.AddressToHexString(receiverAddress),
 	)
-}
-
-// Returns if a transaction is valid or not based on the state of the ledger
-// TODO: Make verifications of utxos existing in ledger more efficient
-// TODO: Safety checks
-func ValidateTransaction(tx transaction.Transaction) bool {
-	var inputTotal uint64 = 0
-	for _, input := range tx.Inputs {
-		hash := input.PreviousTransactionHash
-		index := input.PreviousTransactionIndex
-		verification := input.Verification
-		signature := verification.Signature
-		senderPublicKey := verification.EncodedPublicKey
-		senderAddress := account.GetAddressFromPublicKey(senderPublicKey)
-
-		previousTransaction := ledger[hash]
-		previousTransactionOutput := previousTransaction.Outputs[index]
-		utxo := transaction.UnspentTransactionOutput{
-			TransactionHash:  hash,
-			TransactionIndex: index,
-			ReceiverAddress:  previousTransactionOutput.ReceiverAddress,
-			Amount:           previousTransactionOutput.Amount,
-		}
-
-		// Check if input is provided by the sender
-		if !transaction.VerifyInput(senderPublicKey, hash, index, signature) {
-			return false
-		}
-
-		// Find if a current utxo matches the one implied by the transaction
-		match := false
-		for _, compareUTXO := range unspentOutputs[senderAddress] {
-			if utxo.Equal(compareUTXO) {
-				match = true
-			}
-		}
-
-		if !match {
-			return false
-		}
-
-		inputTotal += utxo.Amount
-	}
-
-	var outputTotal uint64 = 0
-	for _, output := range tx.Outputs {
-		outputTotal += output.Amount
-	}
-
-	if len(tx.Inputs) != 0 && inputTotal != outputTotal {
-		return false
-	}
-
-	return true
 }
 
 // Gets the micro unit value of an account based on an address
