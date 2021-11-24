@@ -34,25 +34,7 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 		return
 	}
 
-	transactionHash := newTransaction.Hash()
-
-	// Add transaction to ledger
-	ledger[transactionHash] = newTransaction
-
-	// Record unspent transaction output
-	output := transaction.UnspentTransactionOutput{
-		TransactionHash:  transactionHash,
-		TransactionIndex: uint16(0),
-		ReceiverAddress:  address,
-		Amount:           amount,
-	}
-	unspentOutputs[address] = append(unspentOutputs[address], output)
-
-	fmt.Printf("Coinbase transaction %v sending %v to %v\n",
-		util.HashToHexString(transactionHash),
-		readableAmount,
-		util.AddressToHexString(address),
-	)
+	chain.AddTransaction(newTransaction)
 }
 
 // Creates a new peer transaction for a given amount
@@ -67,7 +49,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 
 	diff := senderValue - amount
 
-	utxos := unspentOutputs[senderAddress]
+	utxos := chain.GetUnspentTransactions(senderAddress)
 	outputReceiver := transaction.TransactionOutput{
 		ReceiverAddress: receiverAddress,
 		Amount:          amount,
@@ -89,44 +71,15 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		return
 	}
 
-	transactionHash := newTransaction.Hash()
-
-	// Add transaction to ledger
-	ledger[transactionHash] = newTransaction
-
-	// Record received unspent transaction output
-	receiverOutput := transaction.UnspentTransactionOutput{
-		TransactionHash:  transactionHash,
-		TransactionIndex: uint16(0),
-		ReceiverAddress:  receiverAddress,
-		Amount:           amount,
-	}
-	unspentOutputs[receiverAddress] = append(unspentOutputs[receiverAddress], receiverOutput)
-
-	// Record refund to sender as unspent transaction output
-	if diff != 0 {
-		senderOutput := transaction.UnspentTransactionOutput{
-			TransactionHash:  transactionHash,
-			TransactionIndex: uint16(1),
-			ReceiverAddress:  senderAddress,
-			Amount:           diff,
-		}
-		unspentOutputs[senderAddress] = []transaction.UnspentTransactionOutput{senderOutput}
-	}
-
-	fmt.Printf("Peer transaction %v sending %v from %v to %v\n",
-		util.HashToHexString(transactionHash),
-		readableAmount,
-		util.AddressToHexString(senderAddress),
-		util.AddressToHexString(receiverAddress),
-	)
+	chain.AddTransaction(newTransaction)
 }
 
-// Gets the micro unit value of an account based on an address
+// Gets the value of an account based on an address
 func GetAccountValue(address [protocol.AddressLength]byte) uint64 {
 	var total uint64 = 0
-	for _, output := range unspentOutputs[address] {
-		total += output.Amount
+	utxos := chain.GetUnspentTransactions(address)
+	for _, utxo := range utxos {
+		total += utxo.Amount
 	}
 
 	return total

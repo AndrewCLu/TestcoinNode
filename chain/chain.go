@@ -25,3 +25,58 @@ func InitializeChain() {
 	transactions = make(map[[transaction.TransactionHashLength]byte]transaction.Transaction)
 	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput)
 }
+
+func AddTransaction(tx transaction.Transaction) {
+	// TODO: Validate transaction
+	pendingTransactions = append(pendingTransactions, tx)
+}
+
+func GetUnspentTransactions(address [protocol.AddressLength]byte) []transaction.UnspentTransactionOutput {
+	return unspentOutputs[address]
+}
+
+// ledger[transactionHash] = newTransaction
+
+// 	// Record unspent transaction output
+// 	output := transaction.UnspentTransactionOutput{
+// 		TransactionHash:  transactionHash,
+// 		TransactionIndex: uint16(0),
+// 		ReceiverAddress:  address,
+// 		Amount:           amount,
+// 	}
+// 	unspentOutputs[address] = append(unspentOutputs[address], output)
+
+// fmt.Printf("Coinbase transaction %v sending %v to %v\n",
+// 	util.HashToHexString(transactionHash),
+// 	readableAmount,
+// 	util.AddressToHexString(address),
+
+// // Add transaction to ledger
+// 	ledger[transactionHash] = newTransaction
+
+// 	// Record received unspent transaction output
+// 	receiverOutput := transaction.UnspentTransactionOutput{
+// 		TransactionHash:  transactionHash,
+// 		TransactionIndex: uint16(0),
+// 		ReceiverAddress:  receiverAddress,
+// 		Amount:           amount,
+// 	}
+// 	unspentOutputs[receiverAddress] = append(unspentOutputs[receiverAddress], receiverOutput)
+
+// 	// Record refund to sender as unspent transaction output
+// 	if diff != 0 {
+// 		senderOutput := transaction.UnspentTransactionOutput{
+// 			TransactionHash:  transactionHash,
+// 			TransactionIndex: uint16(1),
+// 			ReceiverAddress:  senderAddress,
+// 			Amount:           diff,
+// 		}
+// 		unspentOutputs[senderAddress] = []transaction.UnspentTransactionOutput{senderOutput}
+// 	}
+
+// 	fmt.Printf("Peer transaction %v sending %v from %v to %v\n",
+// 		util.HashToHexString(transactionHash),
+// 		readableAmount,
+// 		util.AddressToHexString(senderAddress),
+// 		util.AddressToHexString(receiverAddress),
+// 	)
