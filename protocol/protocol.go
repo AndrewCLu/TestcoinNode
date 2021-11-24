@@ -12,6 +12,6 @@ const MaxTransactionsInBlock = 10 // How many transactions are allowed in each b
 const TargetLength = 4 // Number of bytes we can adjust in the target
 
 // Given the current block number, returns the appropriate target for solving proof of work
-func ComputeTarget(blockNumber uint64) (target [TargetLength]byte) {
+func ComputeTarget(blockNumber int) (target [TargetLength]byte) {
 	return [4]byte{0, 0, 0, 15}
 }

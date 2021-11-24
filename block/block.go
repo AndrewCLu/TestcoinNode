@@ -1,10 +1,8 @@
 package block
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/AndrewCLu/TestcoinNode/crypto"
@@ -27,7 +25,7 @@ type BlockHeader struct {
 	Nonce               uint32                      `json:"nonce"`
 }
 
-func NewBlock(currentBlockNumber uint64, previousBlockHash [crypto.HashLength]byte, transactions []transaction.Transaction) (Block, error) {
+func NewBlock(previousBlockHash [crypto.HashLength]byte, currentBlockNumber int, transactions []transaction.Transaction) (Block, error) {
 	if len(transactions) > protocol.MaxTransactionsInBlock {
 		return Block{}, errors.New("Number of transactions exceeds max allowable.")
 	}
@@ -54,46 +52,6 @@ func NewBlock(currentBlockNumber uint64, previousBlockHash [crypto.HashLength]by
 	}
 
 	return block, nil
-}
-
-// Given a block header, compute the nonce that results in a hash under the desired target
-func (header BlockHeader) Solve() uint32 {
-	source := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(source)
-	var nonce uint32 = r.Uint32()
-
-	var target [crypto.HashLength]byte
-	for i := 0; i < protocol.TargetLength; i++ {
-		target[i] = header.Target[i]
-	}
-	for i := protocol.TargetLength; i < crypto.HashLength; i++ {
-		target[i] = byte(255)
-	}
-	targetBytes := target[:]
-
-	t1 := time.Now()
-	fmt.Printf("Solving with target %v ...\n", util.HashToHexString(target))
-
-	count := 0
-	for true {
-		count += 1
-		header.Nonce = nonce
-		hash := header.Hash()
-
-		// fmt.Printf("Trying nonce %v, yielding hash %v\n", nonce, util.HashToHexString(hash))
-
-		if bytes.Compare(hash[:], targetBytes) < 0 {
-			t2 := time.Now()
-			diff := t2.Sub(t1)
-
-			fmt.Printf("Successfully found nonce %v with %v tries in time %v, yielding hash %v\n", nonce, count, diff, util.HashToHexString(hash))
-			return nonce
-		}
-
-		nonce += 1
-	}
-
-	return nonce
 }
 
 func (header BlockHeader) BlockHeaderToByteArray() []byte {

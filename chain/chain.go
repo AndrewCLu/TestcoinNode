@@ -15,7 +15,7 @@ var pendingTransactions []transaction.Transaction                               
 var unspentOutputs map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput // All utxos
 
 func InitializeChain() {
-	genesisBlock, _ := block.NewBlock(0, crypto.HashBytes([]byte("first")), []transaction.Transaction{})
+	genesisBlock, _ := block.NewBlock(crypto.HashBytes([]byte("first")), 0, []transaction.Transaction{})
 	genesisBlockHash := genesisBlock.Hash()
 	blocks = make(map[[crypto.HashLength]byte]block.Block)
 	blocks[genesisBlockHash] = genesisBlock
@@ -26,9 +26,28 @@ func InitializeChain() {
 	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput)
 }
 
-func AddTransaction(tx transaction.Transaction) {
-	// TODO: Validate transaction
+func GetPendingTransactions(num int) []transaction.Transaction {
+	if num > len(pendingTransactions) {
+		return pendingTransactions
+	}
+
+	return pendingTransactions[:num]
+}
+
+func AddPendingTransaction(tx transaction.Transaction) {
 	pendingTransactions = append(pendingTransactions, tx)
+}
+
+func GetLastBlockInfo() (hash [crypto.HashLength]byte, blockNum int) {
+	return lastBlockHash, len(blocks) - 1
+}
+
+func AddBlock(block block.Block) {
+	// Add block to blocks
+	// Update block hash
+	// Process all transactions
+	// Update pending transactions
+	// Process all new and deleted utxos
 }
 
 func GetUnspentTransactions(address [protocol.AddressLength]byte) []transaction.UnspentTransactionOutput {

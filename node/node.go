@@ -34,7 +34,7 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 		return
 	}
 
-	chain.AddTransaction(newTransaction)
+	chain.AddPendingTransaction(newTransaction)
 }
 
 // Creates a new peer transaction for a given amount
@@ -71,7 +71,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		return
 	}
 
-	chain.AddTransaction(newTransaction)
+	chain.AddPendingTransaction(newTransaction)
 }
 
 // Gets the value of an account based on an address
