@@ -14,8 +14,8 @@ import (
 )
 
 func MineBlock() block.Block {
-	txs := chain.GetPendingTransactions(protocol.MaxTransactionsInBlock)
-	lastBlockHash, lastBlockNum := chain.GetLastBlockInfo()
+	txs, _ := chain.GetPendingTransactions(protocol.MaxTransactionsInBlock)
+	lastBlockHash, lastBlockNum, _ := chain.GetLastBlockInfo()
 	blockNum := lastBlockNum + 1
 
 	block, _ := block.NewBlock(lastBlockHash, blockNum, txs)
@@ -45,7 +45,7 @@ func Solve(header block.BlockHeader) uint32 {
 	targetBytes := target[:]
 
 	t1 := time.Now()
-	fmt.Printf("Solving with target %v ...\n", util.HashToHexString(target))
+	fmt.Printf("Solving block with target %v ...\n", util.HashToHexString(target))
 
 	count := 0
 	for true {

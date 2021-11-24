@@ -26,32 +26,40 @@ func InitializeChain() {
 	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput)
 }
 
-func GetPendingTransactions(num int) []transaction.Transaction {
+func GetTransaction(hash [transaction.TransactionHashLength]byte) (tx transaction.Transaction, success bool) {
+	return transactions[hash], true
+}
+
+func GetPendingTransactions(num int) (txs []transaction.Transaction, success bool) {
 	if num > len(pendingTransactions) {
-		return pendingTransactions
+		return pendingTransactions, true
 	}
 
-	return pendingTransactions[:num]
+	return pendingTransactions[:num], true
 }
 
-func AddPendingTransaction(tx transaction.Transaction) {
+func AddPendingTransaction(tx transaction.Transaction) (success bool) {
 	pendingTransactions = append(pendingTransactions, tx)
+
+	return true
 }
 
-func GetLastBlockInfo() (hash [crypto.HashLength]byte, blockNum int) {
-	return lastBlockHash, len(blocks) - 1
+func GetLastBlockInfo() (hash [crypto.HashLength]byte, blockNum int, success bool) {
+	return lastBlockHash, len(blocks) - 1, true
 }
 
-func AddBlock(block block.Block) {
+func AddBlock(block block.Block) (success bool) {
 	// Add block to blocks
 	// Update block hash
 	// Process all transactions
 	// Update pending transactions
 	// Process all new and deleted utxos
+
+	return true
 }
 
-func GetUnspentTransactions(address [protocol.AddressLength]byte) []transaction.UnspentTransactionOutput {
-	return unspentOutputs[address]
+func GetUnspentTransactions(address [protocol.AddressLength]byte) (utxos []transaction.UnspentTransactionOutput, success bool) {
+	return unspentOutputs[address], true
 }
 
 // ledger[transactionHash] = newTransaction

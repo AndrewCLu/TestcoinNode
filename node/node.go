@@ -49,7 +49,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 
 	diff := senderValue - amount
 
-	utxos := chain.GetUnspentTransactions(senderAddress)
+	utxos, _ := chain.GetUnspentTransactions(senderAddress)
 	outputReceiver := transaction.TransactionOutput{
 		ReceiverAddress: receiverAddress,
 		Amount:          amount,
@@ -77,7 +77,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 // Gets the value of an account based on an address
 func GetAccountValue(address [protocol.AddressLength]byte) uint64 {
 	var total uint64 = 0
-	utxos := chain.GetUnspentTransactions(address)
+	utxos, _ := chain.GetUnspentTransactions(address)
 	for _, utxo := range utxos {
 		total += utxo.Amount
 	}

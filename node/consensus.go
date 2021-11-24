@@ -2,6 +2,7 @@ package node
 
 import (
 	"github.com/AndrewCLu/TestcoinNode/account"
+	"github.com/AndrewCLu/TestcoinNode/chain"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 )
 
@@ -18,7 +19,7 @@ func ValidateTransaction(tx transaction.Transaction) bool {
 		senderPublicKey := verification.EncodedPublicKey
 		senderAddress := account.GetAddressFromPublicKey(senderPublicKey)
 
-		previousTransaction := ledger[hash]
+		previousTransaction, _ := chain.GetTransaction(hash)
 		previousTransactionOutput := previousTransaction.Outputs[index]
 		utxo := transaction.UnspentTransactionOutput{
 			TransactionHash:  hash,
@@ -28,13 +29,15 @@ func ValidateTransaction(tx transaction.Transaction) bool {
 		}
 
 		// Check if input is provided by the sender
+		// TODO: Separate this function into the consensus package
 		if !transaction.VerifyInput(senderPublicKey, hash, index, signature) {
 			return false
 		}
 
 		// Find if a current utxo matches the one implied by the transaction
 		match := false
-		for _, compareUTXO := range unspentOutputs[senderAddress] {
+		utxos, _ := chain.GetUnspentTransactions(senderAddress)
+		for _, compareUTXO := range utxos {
 			if utxo.Equal(compareUTXO) {
 				match = true
 			}
