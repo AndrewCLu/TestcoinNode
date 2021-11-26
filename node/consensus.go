@@ -2,6 +2,7 @@ package node
 
 import (
 	"github.com/AndrewCLu/TestcoinNode/account"
+	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 )
@@ -19,8 +20,20 @@ func ValidateTransaction(tx transaction.Transaction) bool {
 		senderPublicKey := verification.EncodedPublicKey
 		senderAddress := account.GetAddressFromPublicKey(senderPublicKey)
 
-		previousTransaction, _ := chain.GetTransaction(hash)
+		// Make sure the input matches a real transaction
+		previousTransaction, success := chain.GetTransaction(hash)
+		if !success {
+			return false
+		}
 		previousTransactionOutput := previousTransaction.Outputs[index]
+
+		// Verify that the input is actually signed by the utxo possessor
+		// TODO: Separate this function into the consensus package
+		if !transaction.VerifyInput(senderPublicKey, hash, index, signature) {
+			return false
+		}
+
+		// Make a utxo with the information from the previous transaction and see if it matches a valid utxo
 		utxo := transaction.UnspentTransactionOutput{
 			TransactionHash:  hash,
 			TransactionIndex: index,
@@ -28,15 +41,13 @@ func ValidateTransaction(tx transaction.Transaction) bool {
 			Amount:           previousTransactionOutput.Amount,
 		}
 
-		// Check if input is provided by the sender
-		// TODO: Separate this function into the consensus package
-		if !transaction.VerifyInput(senderPublicKey, hash, index, signature) {
-			return false
-		}
+		// Gets a list of valid utxos for the sender
+		// Because we verified the input using the sender key,
+		// any utxo in this list belongs to the account that signed the current input
+		utxos, _ := chain.GetUnspentTransactions(senderAddress)
 
 		// Find if a current utxo matches the one implied by the transaction
 		match := false
-		utxos, _ := chain.GetUnspentTransactions(senderAddress)
 		for _, compareUTXO := range utxos {
 			if utxo.Equal(compareUTXO) {
 				match = true
@@ -59,5 +70,10 @@ func ValidateTransaction(tx transaction.Transaction) bool {
 		return false
 	}
 
+	return true
+}
+
+// Returns if a block is valid or not given the state of the ledger
+func ValidateBlock(block block.Block) bool {
 	return true
 }
