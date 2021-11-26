@@ -48,51 +48,12 @@ type TransactionOutput struct {
 	Amount          uint64                       `json:"amount"`
 }
 
-// Generates a new coinbase transaction and returns it.
+// Generates a new transaction and returns it
 // Also returns boolean indicating success
-func NewCoinbaseTransaction(
-	address [protocol.AddressLength]byte,
-	amount uint64) (t Transaction, success bool) {
-	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
-	transaction := Transaction{
-		ProtocolVersion: protocol.CurrentProtocolVersion,
-		Inputs:          []TransactionInput{},
-		Outputs:         []TransactionOutput{output},
-		Timestamp:       time.Now().Round(0),
-	}
-
-	return transaction, true
-}
-
-// Generates a new peer transaction and returns it
-// Also returns boolean indicating success
-func NewPeerTransaction(
-	senderPublicKey []byte,
-	senderPrivateKey []byte,
-	outputPointers []TransactionOutputPointer,
+func NewTransaction(
+	inputs []TransactionInput,
 	outputs []TransactionOutput,
 ) (t Transaction, success bool) {
-
-	inputs := []TransactionInput{}
-	for _, ptr := range outputPointers {
-		hash := ptr.TransactionHash
-		index := ptr.OutputIndex
-
-		signature := node.SignInput(senderPrivateKey, ptr)
-
-		verification := TransactionInputVerification{
-			Signature:        signature,
-			EncodedPublicKey: senderPublicKey,
-		}
-
-		input := TransactionInput{
-			OutputPointer:      ptr,
-			VerificationLength: uint16(len(verification.TransactionInputVerificationToByteArray())),
-			Verification:       verification,
-		}
-
-		inputs = append(inputs, input)
-	}
 
 	transaction := Transaction{
 		ProtocolVersion: protocol.CurrentProtocolVersion,
@@ -248,6 +209,7 @@ func ByteArrayToTransactionOutputPointer(bytes []byte) TransactionOutputPointer 
 	indexBytes := bytes[crypto.HashLength:]
 
 	var hash [crypto.HashLength]byte
+	copy(hash[:], hashBytes)
 	index := util.BytesToUint16(indexBytes)
 
 	ptr := TransactionOutputPointer{
