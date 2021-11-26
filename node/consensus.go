@@ -15,43 +15,26 @@ import (
 func ValidateTransaction(tx transaction.Transaction) bool {
 	var inputTotal uint64 = 0
 	for _, input := range tx.Inputs {
-		hash := input.PreviousTransactionHash
-		index := input.PreviousTransactionIndex
+		ptr := input.OutputPointer
 		verification := input.Verification
 		signature := verification.Signature
 		senderPublicKey := verification.EncodedPublicKey
 		senderAddress := account.GetAddressFromPublicKey(senderPublicKey)
 
-		// Make sure the input matches a real transaction
-		previousTransaction, success := chain.GetTransaction(hash)
-		if !success {
-			return false
-		}
-		previousTransactionOutput := previousTransaction.Outputs[index]
-
 		// Verify that the input is actually signed by the utxo possessor
-		// TODO: Separate this function into the consensus package
-		if !transaction.VerifyInput(senderPublicKey, hash, index, signature) {
+		if !VerifyInput(senderPublicKey, ptr, signature) {
 			return false
-		}
-
-		// Make a utxo with the information from the previous transaction and see if it matches a valid utxo
-		utxo := transaction.UnspentTransactionOutput{
-			TransactionHash:  hash,
-			TransactionIndex: index,
-			ReceiverAddress:  previousTransactionOutput.ReceiverAddress,
-			Amount:           previousTransactionOutput.Amount,
 		}
 
 		// Gets a list of valid utxos for the sender
 		// Because we verified the input using the sender key,
 		// any utxo in this list belongs to the account that signed the current input
-		utxos, _ := chain.GetUnspentTransactions(senderAddress)
+		outputPointers, _ := chain.GetUnspentTransactions(senderAddress)
 
 		// Find if a current utxo matches the one implied by the transaction
 		match := false
-		for _, compareUTXO := range utxos {
-			if utxo.Equal(compareUTXO) {
+		for _, comparePtr := range outputPointers {
+			if ptr.Equal(comparePtr) {
 				match = true
 			}
 		}
@@ -60,7 +43,8 @@ func ValidateTransaction(tx transaction.Transaction) bool {
 			return false
 		}
 
-		inputTotal += utxo.Amount
+		amount, _ := chain.GetOutputAmount(ptr)
+		inputTotal += amount
 	}
 
 	var outputTotal uint64 = 0
