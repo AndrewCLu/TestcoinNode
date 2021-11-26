@@ -8,7 +8,6 @@ import (
 
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
-	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
@@ -34,15 +33,7 @@ func Solve(header block.BlockHeader) uint32 {
 	r := rand.New(source)
 	var nonce uint32 = r.Uint32()
 
-	// TODO: Extract this into a protocol function
-	var target [crypto.HashLength]byte
-	for i := 0; i < protocol.TargetLength; i++ {
-		target[i] = header.Target[i]
-	}
-	for i := protocol.TargetLength; i < crypto.HashLength; i++ {
-		target[i] = byte(255)
-	}
-	targetBytes := target[:]
+	target := protocol.GetFullTargetFromHeader(header.Target)
 
 	t1 := time.Now()
 	fmt.Printf("Solving block with target %v ...\n", util.HashToHexString(target))
@@ -55,7 +46,7 @@ func Solve(header block.BlockHeader) uint32 {
 
 		// fmt.Printf("Trying nonce %v, yielding hash %v\n", nonce, util.HashToHexString(hash))
 
-		if bytes.Compare(hash[:], targetBytes) < 0 {
+		if bytes.Compare(hash[:], target[:]) < 0 {
 			t2 := time.Now()
 			diff := t2.Sub(t1)
 
