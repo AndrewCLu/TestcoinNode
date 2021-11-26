@@ -28,8 +28,11 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 	address := account.GetAddress()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 
-	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
-	newTransaction, success := transaction.NewTransaction([]TransactionInput{}, []TransactionOutput{output})
+	output := transaction.TransactionOutput{ReceiverAddress: address, Amount: amount}
+	newTransaction, success := transaction.NewTransaction(
+		[]transaction.TransactionInput{},
+		[]transaction.TransactionOutput{output},
+	)
 
 	if !success || !ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new coinbase transaction and FAILED")
@@ -57,16 +60,16 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 
 	// Current implementation just uses all utxos in a transaction
 	// TODO: Pick the minimum number of utxos an account can use to complete a transaction
-	inputs := transaction.TransactionInput{}
+	inputs := []transaction.TransactionInput{}
 	for _, ptr := range outputPointers {
 		signature := SignInput(senderPrivateKey, ptr)
 
-		verification := TransactionInputVerification{
+		verification := transaction.TransactionInputVerification{
 			Signature:        signature,
 			EncodedPublicKey: senderPublicKey,
 		}
 
-		input := TransactionInput{
+		input := transaction.TransactionInput{
 			OutputPointer:      ptr,
 			VerificationLength: uint16(len(verification.TransactionInputVerificationToByteArray())),
 			Verification:       verification,
@@ -74,6 +77,9 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 
 		inputs = append(inputs, input)
 	}
+
+	// If sender has more money than amount, create a refund transaction output
+	diff := senderValue - amount
 
 	outputReceiver := transaction.TransactionOutput{
 		ReceiverAddress: receiverAddress,
@@ -84,14 +90,12 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		Amount:          diff,
 	}
 
-	// If sender has more money than amount, create a refund transaction output
-	diff := senderValue - amount
 	outputs := []transaction.TransactionOutput{outputReceiver}
 	if diff != 0 {
 		outputs = append(outputs, outputSender)
 	}
 
-	newTransaction, success := transaction.NewPeerTransaction(inputs, outputs)
+	newTransaction, success := transaction.NewTransaction(inputs, outputs)
 
 	if !success || !ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new peer transaction and FAILED")
@@ -104,9 +108,10 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 // Gets the value of an account based on an address
 func GetAccountValue(address [protocol.AddressLength]byte) uint64 {
 	var total uint64 = 0
-	utxos, _ := chain.GetUnspentTransactions(address)
-	for _, utxo := range utxos {
-		total += utxo.Amount
+	outputPointers, _ := chain.GetUnspentTransactions(address)
+	for _, ptr := range outputPointers {
+		amount, _ := chain.GetOutputAmount(ptr)
+		total += amount
 	}
 
 	return total

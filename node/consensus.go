@@ -81,9 +81,9 @@ func ValidateBlock(block block.Block) bool {
 }
 
 // Signs a transaction input
-func SignInput(privateKey []byte, 
-	outputPointer transaction.TransactionOutputPointer
-) (signature [TransactionSignatureLength]byte) {
+func SignInput(privateKey []byte,
+	outputPointer transaction.TransactionOutputPointer,
+) (signature [transaction.TransactionSignatureLength]byte) {
 	hash := outputPointer.TransactionHash
 	index := outputPointer.OutputIndex
 
@@ -96,11 +96,12 @@ func SignInput(privateKey []byte,
 
 // Verifies the signature of a transaction input
 func VerifyInput(publicKey []byte,
-	outputPointer transaction.TransactionOutputPointer
+	outputPointer transaction.TransactionOutputPointer,
+	signature [transaction.TransactionSignatureLength]byte,
 ) (verified bool) {
 	hash := outputPointer.TransactionHash
 	index := outputPointer.OutputIndex
-	
+
 	inputBytes := append(hash[:], util.Uint16ToBytes(index)...)
 
 	verified, _ = crypto.VerifyByteArray(inputBytes, publicKey, signature)

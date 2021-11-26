@@ -26,10 +26,13 @@ func InitializeChain() {
 	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.TransactionOutputPointer)
 }
 
+// Gets a recorded transaction
 func GetTransaction(hash [crypto.HashLength]byte) (tx transaction.Transaction, success bool) {
 	return transactions[hash], true
 }
 
+// Gets num pending transactions
+// TODO: Have a ranking of pending transactions to retrieve by time added or miner fee
 func GetPendingTransactions(num int) (txs []transaction.Transaction, success bool) {
 	if num > len(pendingTransactions) {
 		return pendingTransactions, true
@@ -38,16 +41,19 @@ func GetPendingTransactions(num int) (txs []transaction.Transaction, success boo
 	return pendingTransactions[:num], true
 }
 
+// Add a pending transaction to the list
 func AddPendingTransaction(tx transaction.Transaction) (success bool) {
 	pendingTransactions = append(pendingTransactions, tx)
 
 	return true
 }
 
+// Get information about the last block in the chain
 func GetLastBlockInfo() (hash [crypto.HashLength]byte, blockNum int, success bool) {
 	return lastBlockHash, len(blocks) - 1, true
 }
 
+// Add a block to the chain
 func AddBlock(block block.Block) (success bool) {
 	// Add block to blocks
 	// Update block hash
@@ -58,10 +64,12 @@ func AddBlock(block block.Block) (success bool) {
 	return true
 }
 
+// Get all unspent output pointers for a given address
 func GetUnspentTransactions(address [protocol.AddressLength]byte) (outputPointers []transaction.TransactionOutputPointer, success bool) {
 	return unspentOutputs[address], true
 }
 
+// Get the output amount corresponding to a specific output pointer
 func GetOutputAmount(ptr transaction.TransactionOutputPointer) (amount uint64, success bool) {
 	hash := ptr.TransactionHash
 	index := ptr.OutputIndex
