@@ -53,7 +53,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 
 	// Check that sender has enough money
-	senderValue := GetAccountValue(senderAddress)
+	senderValue := chain.GetAccountValue(senderAddress)
 	if senderValue < amount {
 		fmt.Printf("Attempted to create new peer transaction but sender has insufficient funds.")
 		return transaction.Transaction{}

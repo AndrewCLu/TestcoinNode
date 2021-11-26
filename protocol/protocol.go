@@ -15,7 +15,8 @@ const TargetLength = 4 // Number of bytes we can adjust in the target
 
 // Given the current block number, returns the appropriate target for solving proof of work
 func ComputeTarget(blockNumber int) (target [TargetLength]byte) {
-	return [4]byte{0, 0, 0, 15}
+	// return [4]byte{0, 0, 0, 15}
+	return [4]byte{0, 255, 255, 255}
 }
 
 // Given the first few bytes of the target stored in the block header, return the full target as a hash to be compared to
