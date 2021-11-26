@@ -7,12 +7,12 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 )
 
-var blocks map[[crypto.HashLength]byte]block.Block                                   // Stores all previous blocks
-var transactions map[[transaction.TransactionHashLength]byte]transaction.Transaction // Stores all previous transactions
+var blocks map[[crypto.HashLength]byte]block.Block                   // Stores all previous blocks
+var transactions map[[crypto.HashLength]byte]transaction.Transaction // Stores all previous transactions
 
 var lastBlockHash [crypto.HashLength]byte                                                  // Last block hash
 var pendingTransactions []transaction.Transaction                                          // All transactions that have not been processed yet
-var unspentOutputs map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput // All utxos
+var unspentOutputs map[[protocol.AddressLength]byte][]transaction.TransactionOutputPointer // All utxos
 
 func InitializeChain() {
 	genesisBlock, _ := block.NewBlock(crypto.HashBytes([]byte("first")), 0, []transaction.Transaction{})
@@ -22,11 +22,11 @@ func InitializeChain() {
 	lastBlockHash = genesisBlockHash
 
 	pendingTransactions = []transaction.Transaction{}
-	transactions = make(map[[transaction.TransactionHashLength]byte]transaction.Transaction)
-	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.UnspentTransactionOutput)
+	transactions = make(map[[crypto.HashLength]byte]transaction.Transaction)
+	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.TransactionOutputPointer)
 }
 
-func GetTransaction(hash [transaction.TransactionHashLength]byte) (tx transaction.Transaction, success bool) {
+func GetTransaction(hash [crypto.HashLength]byte) (tx transaction.Transaction, success bool) {
 	return transactions[hash], true
 }
 
@@ -58,7 +58,7 @@ func AddBlock(block block.Block) (success bool) {
 	return true
 }
 
-func GetUnspentTransactions(address [protocol.AddressLength]byte) (utxos []transaction.UnspentTransactionOutput, success bool) {
+func GetUnspentTransactions(address [protocol.AddressLength]byte) (outputPointers []transaction.TransactionOutputPointer, success bool) {
 	return unspentOutputs[address], true
 }
 
