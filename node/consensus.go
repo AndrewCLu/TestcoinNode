@@ -4,7 +4,9 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
+	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
+	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
 // Returns if a transaction is valid or not based on the state of the ledger
@@ -76,4 +78,32 @@ func ValidateTransaction(tx transaction.Transaction) bool {
 // Returns if a block is valid or not given the state of the ledger
 func ValidateBlock(block block.Block) bool {
 	return true
+}
+
+// Signs a transaction input
+func SignInput(privateKey []byte, 
+	outputPointer transaction.TransactionOutputPointer
+) (signature [TransactionSignatureLength]byte) {
+	hash := outputPointer.TransactionHash
+	index := outputPointer.OutputIndex
+
+	inputBytes := append(hash[:], util.Uint16ToBytes(index)...)
+
+	signature, _ = crypto.SignByteArray(inputBytes, privateKey)
+
+	return signature
+}
+
+// Verifies the signature of a transaction input
+func VerifyInput(publicKey []byte,
+	outputPointer transaction.TransactionOutputPointer
+) (verified bool) {
+	hash := outputPointer.TransactionHash
+	index := outputPointer.OutputIndex
+	
+	inputBytes := append(hash[:], util.Uint16ToBytes(index)...)
+
+	verified, _ = crypto.VerifyByteArray(inputBytes, publicKey, signature)
+
+	return verified
 }

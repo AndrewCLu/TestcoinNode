@@ -12,9 +12,8 @@ import (
 
 const NumInputOutputLength = 2
 
-const TransactionHashLength = crypto.HashLength
 const TransactionIndexLength = 2
-const TransactionVerificationOffset = TransactionHashLength + TransactionIndexLength
+const TransactionOutputPointerLength = crypto.HashLength + TransactionIndexLength
 const TransactionVerificationLengthLength = 2
 const TransactionSignatureLength = crypto.SignatureLength
 
@@ -29,10 +28,14 @@ type Transaction struct {
 }
 
 type TransactionInput struct {
-	PreviousTransactionHash  [TransactionHashLength]byte  `json:"previousTransactionHash"`
-	PreviousTransactionIndex uint16                       `json:"previousTransactionIndex"`
-	VerificationLength       uint16                       `json:"verificationLength"`
-	Verification             TransactionInputVerification `json:"verification"`
+	OutputPointer      TransactionOutputPointer     `json:"outputPointer"`
+	VerificationLength uint16                       `json:"verificationLength"`
+	Verification       TransactionInputVerification `json:"verification"`
+}
+
+type TransactionOutputPointer struct {
+	TransactionHash [crypto.HashLength]byte `json:"transactionHash"`
+	OutputIndex     uint16                  `json:"outputIndex"`
 }
 
 type TransactionInputVerification struct {
@@ -43,13 +46,6 @@ type TransactionInputVerification struct {
 type TransactionOutput struct {
 	ReceiverAddress [protocol.AddressLength]byte `json:"receiverAddress"`
 	Amount          uint64                       `json:"amount"`
-}
-
-type UnspentTransactionOutput struct {
-	TransactionHash  [TransactionHashLength]byte  `json:"transactionHash"`
-	TransactionIndex uint16                       `json:"transactionIndex"`
-	ReceiverAddress  [protocol.AddressLength]byte `json:"receiverAddress"`
-	Amount           uint64                       `json:"amount"`
 }
 
 // Generates a new coinbase transaction and returns it.
@@ -68,21 +64,21 @@ func NewCoinbaseTransaction(
 	return transaction, true
 }
 
-// Generates a new peer transaction and returns it.
+// Generates a new peer transaction and returns it
 // Also returns boolean indicating success
 func NewPeerTransaction(
 	senderPublicKey []byte,
 	senderPrivateKey []byte,
-	utxos []UnspentTransactionOutput,
+	outputPointers []TransactionOutputPointer,
 	outputs []TransactionOutput,
 ) (t Transaction, success bool) {
 
 	inputs := []TransactionInput{}
-	var inputTotal uint64 = 0
-	for _, utxo := range utxos {
-		signature := SignInput(senderPrivateKey, utxo.TransactionHash, utxo.TransactionIndex)
+	for _, ptr := range outputPointers {
+		hash := ptr.TransactionHash
+		index := ptr.OutputIndex
 
-		inputTotal += utxo.Amount
+		signature := node.SignInput(senderPrivateKey, ptr)
 
 		verification := TransactionInputVerification{
 			Signature:        signature,
@@ -90,23 +86,12 @@ func NewPeerTransaction(
 		}
 
 		input := TransactionInput{
-			PreviousTransactionHash:  utxo.TransactionHash,
-			PreviousTransactionIndex: utxo.TransactionIndex,
-			VerificationLength:       uint16(len(verification.TransactionInputVerificationToByteArray())),
-			Verification:             verification,
+			OutputPointer:      ptr,
+			VerificationLength: uint16(len(verification.TransactionInputVerificationToByteArray())),
+			Verification:       verification,
 		}
 
 		inputs = append(inputs, input)
-	}
-
-	var outputTotal uint64 = 0
-	for _, output := range outputs {
-		outputTotal += output.Amount
-	}
-
-	// If inputs and outputs don't match, transaction failed
-	if inputTotal != outputTotal {
-		return Transaction{}, false
 	}
 
 	transaction := Transaction{
@@ -168,10 +153,10 @@ func ByteArrayToTransaction(bytes []byte) Transaction {
 
 	inputs := []TransactionInput{}
 	for i := 0; i < numInputs; i += 1 {
-		verificationOffset := currentByte + TransactionVerificationOffset
+		verificationOffset := currentByte + TransactionOutputPointerLength
 		verificationLength := util.BytesToUint16(bytes[verificationOffset : verificationOffset+TransactionVerificationLengthLength])
 
-		inputLength := TransactionVerificationOffset + TransactionVerificationLengthLength + int(verificationLength)
+		inputLength := TransactionOutputPointerLength + TransactionVerificationLengthLength + int(verificationLength)
 		input := ByteArrayToTransactionInput(bytes[currentByte : currentByte+inputLength])
 		inputs = append(inputs, input)
 		currentByte += inputLength
@@ -200,17 +185,14 @@ func ByteArrayToTransaction(bytes []byte) Transaction {
 
 // Converts a TransactionInput into a byte array
 func (t TransactionInput) TransactionInputToByteArray() []byte {
-	hashBytes := t.PreviousTransactionHash[:]
-
-	indexBytes := util.Uint16ToBytes(t.PreviousTransactionIndex)
+	outputPointerBytes := t.OutputPointer.TransactionOutputPointerToByteArray()
 
 	verificationLengthBytes := util.Uint16ToBytes(t.VerificationLength)
 
 	verificationBytes := t.Verification.TransactionInputVerificationToByteArray()
 
 	allBytes := [][]byte{
-		hashBytes,
-		indexBytes,
+		outputPointerBytes,
 		verificationLengthBytes,
 		verificationBytes,
 	}
@@ -223,35 +205,57 @@ func (t TransactionInput) TransactionInputToByteArray() []byte {
 func ByteArrayToTransactionInput(bytes []byte) TransactionInput {
 	currentByte := 0
 
-	hashBytes := bytes[currentByte : currentByte+TransactionHashLength]
-	currentByte += TransactionHashLength
-
-	indexBytes := bytes[currentByte : currentByte+TransactionIndexLength]
-	currentByte += TransactionIndexLength
+	outputPointerBytes := bytes[currentByte : currentByte+TransactionOutputPointerLength]
+	currentByte += TransactionOutputPointerLength
 
 	verificationLengthBytes := bytes[currentByte : currentByte+TransactionVerificationLengthLength]
 	currentByte += TransactionVerificationLengthLength
 
 	verificationBytes := bytes[currentByte:]
 
-	var hash [TransactionHashLength]byte
-	var index uint16
+	var outputPointer TransactionOutputPointer
 	var verificationLength uint16
 	var verification TransactionInputVerification
 
-	copy(hash[:], hashBytes)
-	index = util.BytesToUint16(indexBytes)
+	outputPointer = ByteArrayToTransactionOutputPointer(outputPointerBytes)
 	verificationLength = util.BytesToUint16(verificationLengthBytes)
 	verification = ByteArrayToTransactionInputVerification(verificationBytes)
 
 	input := TransactionInput{
-		PreviousTransactionHash:  hash,
-		PreviousTransactionIndex: index,
-		VerificationLength:       verificationLength,
-		Verification:             verification,
+		OutputPointer:      outputPointer,
+		VerificationLength: verificationLength,
+		Verification:       verification,
 	}
 
 	return input
+}
+
+func (ptr TransactionOutputPointer) TransactionOutputPointerToByteArray() []byte {
+	hashBytes := ptr.TransactionHash[:]
+
+	indexBytes := util.Uint16ToBytes(ptr.OutputIndex)
+
+	allBytes := [][]byte{
+		hashBytes,
+		indexBytes,
+	}
+
+	return util.ConcatByteSlices(allBytes)
+}
+
+func ByteArrayToTransactionOutputPointer(bytes []byte) TransactionOutputPointer {
+	hashBytes := bytes[:crypto.HashLength]
+	indexBytes := bytes[crypto.HashLength:]
+
+	var hash [crypto.HashLength]byte
+	index := util.BytesToUint16(indexBytes)
+
+	ptr := TransactionOutputPointer{
+		TransactionHash: hash,
+		OutputIndex:     index,
+	}
+
+	return ptr
 }
 
 func (t TransactionInputVerification) TransactionInputVerificationToByteArray() []byte {
@@ -315,32 +319,8 @@ func ByteArrayToTransactionOutput(bytes []byte) TransactionOutput {
 	return output
 }
 
-// Signs a transaction input
-func SignInput(privateKey []byte,
-	hash [TransactionHashLength]byte,
-	index uint16,
-) (signature [TransactionSignatureLength]byte) {
-	inputBytes := append(hash[:], util.Uint16ToBytes(index)...)
-
-	signature, _ = crypto.SignByteArray(inputBytes, privateKey)
-
-	return signature
-}
-
-// Verifies the signature of a transaction input
-func VerifyInput(publicKey []byte,
-	hash [TransactionHashLength]byte,
-	index uint16, signature [TransactionSignatureLength]byte,
-) (verified bool) {
-	inputBytes := append(hash[:], util.Uint16ToBytes(index)...)
-
-	verified, _ = crypto.VerifyByteArray(inputBytes, publicKey, signature)
-
-	return verified
-}
-
 // Hashes a transaction
-func (t Transaction) Hash() [TransactionHashLength]byte {
+func (t Transaction) Hash() [crypto.HashLength]byte {
 	return crypto.HashBytes(t.TransactionToByteArray())
 }
 
@@ -350,9 +330,6 @@ func (ta Transaction) Equal(tb Transaction) bool {
 }
 
 // Checks if two unspent transaction outputs are equal
-func (utxoa UnspentTransactionOutput) Equal(utxob UnspentTransactionOutput) bool {
-	return reflect.DeepEqual(utxoa.TransactionHash, utxob.TransactionHash) &&
-		utxoa.TransactionIndex == utxob.TransactionIndex &&
-		reflect.DeepEqual(utxoa.ReceiverAddress, utxob.ReceiverAddress) &&
-		utxoa.Amount == utxob.Amount
+func (ptra TransactionOutputPointer) Equal(ptrb TransactionOutputPointer) bool {
+	return reflect.DeepEqual(ptra.TransactionHash, ptrb.TransactionHash) && ptra.OutputIndex == ptrb.OutputIndex
 }

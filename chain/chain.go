@@ -62,6 +62,16 @@ func GetUnspentTransactions(address [protocol.AddressLength]byte) (utxos []trans
 	return unspentOutputs[address], true
 }
 
+func GetOutputAmount(ptr transaction.TransactionOutputPointer) (amount uint64, success bool) {
+	hash := ptr.TransactionHash
+	index := ptr.OutputIndex
+
+	tx := transactions[hash]
+	output := tx.Outputs[index]
+
+	return output.Amount, true
+}
+
 // ledger[transactionHash] = newTransaction
 
 // 	// Record unspent transaction output
