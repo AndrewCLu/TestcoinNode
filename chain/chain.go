@@ -116,12 +116,28 @@ func AddTransaction(tx transaction.Transaction) (success bool) {
 
 // Add a block to the chain
 // TODO: Make this atomic - either it updates entire state if success or not at all
+// Assumes that block has been validated by node
 func AddBlock(block block.Block) (success bool) {
 	// Add block to blocks
 	// Update block hash
 	// Process all transactions
 	// Update pending transactions
 	// Process all new and deleted utxos
+
+	for _, tx := range block.Body {
+		success := AddTransaction(tx)
+		// Make sure transactions were successfully added
+		if !success {
+			return false
+		}
+	}
+
+	// Add new block
+	hash := block.Hash()
+	blocks[hash] = block
+
+	// Update last block hash
+	lastBlockHash = hash
 
 	return true
 }
@@ -141,49 +157,3 @@ func GetOutputAmount(ptr transaction.TransactionOutputPointer) (amount uint64, s
 
 	return output.Amount, true
 }
-
-// ledger[transactionHash] = newTransaction
-
-// 	// Record unspent transaction output
-// 	output := transaction.UnspentTransactionOutput{
-// 		TransactionHash:  transactionHash,
-// 		TransactionIndex: uint16(0),
-// 		ReceiverAddress:  address,
-// 		Amount:           amount,
-// 	}
-// 	unspentOutputs[address] = append(unspentOutputs[address], output)
-
-// fmt.Printf("Coinbase transaction %v sending %v to %v\n",
-// 	util.HashToHexString(transactionHash),
-// 	readableAmount,
-// 	util.AddressToHexString(address),
-
-// // Add transaction to ledger
-// 	ledger[transactionHash] = newTransaction
-
-// 	// Record received unspent transaction output
-// 	receiverOutput := transaction.UnspentTransactionOutput{
-// 		TransactionHash:  transactionHash,
-// 		TransactionIndex: uint16(0),
-// 		ReceiverAddress:  receiverAddress,
-// 		Amount:           amount,
-// 	}
-// 	unspentOutputs[receiverAddress] = append(unspentOutputs[receiverAddress], receiverOutput)
-
-// 	// Record refund to sender as unspent transaction output
-// 	if diff != 0 {
-// 		senderOutput := transaction.UnspentTransactionOutput{
-// 			TransactionHash:  transactionHash,
-// 			TransactionIndex: uint16(1),
-// 			ReceiverAddress:  senderAddress,
-// 			Amount:           diff,
-// 		}
-// 		unspentOutputs[senderAddress] = []transaction.UnspentTransactionOutput{senderOutput}
-// 	}
-
-// 	fmt.Printf("Peer transaction %v sending %v from %v to %v\n",
-// 		util.HashToHexString(transactionHash),
-// 		readableAmount,
-// 		util.AddressToHexString(senderAddress),
-// 		util.AddressToHexString(receiverAddress),
-// 	)
