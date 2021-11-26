@@ -109,7 +109,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		return transaction.Transaction{}
 	}
 
-	fmt.Printf("Created new peer transaction %v sending %v from %v to %v",
+	fmt.Printf("Created new peer transaction %v sending %v from %v to %v\n",
 		util.HashToHexString(newTransaction.Hash()),
 		readableAmount,
 		util.HashToHexString(senderAddress),
