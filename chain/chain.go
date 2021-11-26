@@ -187,9 +187,9 @@ func PrintChainState() {
 	fmt.Printf("Unspent transactions...\n")
 	for address, outputList := range unspentOutputs {
 		amount := util.Uint64UnitToFloat64Unit(GetAccountValue(address))
-		fmt.Printf("Account %v has value %v", util.HashToHexString(address), amount)
+		fmt.Printf("Account %v has value %v\n", util.HashToHexString(address), amount)
 		for _, output := range outputList {
-			fmt.Printf("Account %v has unspent output at transaction %v index %v",
+			fmt.Printf("Account %v has unspent output at transaction %v index %v\n",
 				util.HashToHexString(address),
 				util.HashToHexString(output.TransactionHash),
 				output.OutputIndex,

@@ -40,7 +40,11 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) tra
 		return transaction.Transaction{}
 	}
 
-	fmt.Printf("Created new coinbase transaction sending %v to %v\n", readableAmount, util.HashToHexString(address))
+	fmt.Printf("Created new coinbase transaction %v sending %v to %v\n",
+		util.HashToHexString(newTransaction.Hash()),
+		readableAmount,
+		util.HashToHexString(address),
+	)
 	chain.AddPendingTransaction(newTransaction)
 	return newTransaction
 }
@@ -105,7 +109,12 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		return transaction.Transaction{}
 	}
 
-	fmt.Printf("Created new peer transaction sending %v from %v to %v", readableAmount, util.HashToHexString(senderAddress), util.HashToHexString(receiverAddress))
+	fmt.Printf("Created new peer transaction %v sending %v from %v to %v",
+		util.HashToHexString(newTransaction.Hash()),
+		readableAmount,
+		util.HashToHexString(senderAddress),
+		util.HashToHexString(receiverAddress),
+	)
 	chain.AddPendingTransaction(newTransaction)
 	return newTransaction
 }

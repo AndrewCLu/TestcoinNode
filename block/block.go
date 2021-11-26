@@ -30,7 +30,7 @@ func NewBlock(previousBlockHash [crypto.HashLength]byte, currentBlockNumber int,
 		return Block{}, errors.New("Number of transactions exceeds max allowable.")
 	}
 
-	var transactionHashes [][]byte
+	transactionHashes := make([][]byte, len(transactions))
 	for i, tx := range transactions {
 		hash := tx.Hash()
 		transactionHashes[i] = hash[:]

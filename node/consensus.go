@@ -78,7 +78,7 @@ func ValidateBlock(block block.Block) bool {
 		return false
 	}
 
-	var transactionHashes [][]byte
+	transactionHashes := make([][]byte, len(transactions))
 	for i, tx := range transactions {
 		// Check that each transaction is valid
 		// TODO: UPDATE STATE IN BETWEEN CHECKING IF TRANSACTIONS ARE VALID
