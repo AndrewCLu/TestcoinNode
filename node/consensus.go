@@ -1,16 +1,19 @@
 package node
 
 import (
+	"bytes"
+
 	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
 	"github.com/AndrewCLu/TestcoinNode/crypto"
+	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
 // Returns if a transaction is valid or not based on the state of the ledger
-// TODO: Make verifications of utxos existing in ledger more efficient
+// TODO: Check that pointers aren't reused as different inputs in the same tx
 // TODO: Safety checks
 func ValidateTransaction(tx transaction.Transaction) bool {
 	var inputTotal uint64 = 0
@@ -60,7 +63,52 @@ func ValidateTransaction(tx transaction.Transaction) bool {
 }
 
 // Returns if a block is valid or not given the state of the ledger
+// TODO: Make sure input validation is done dynamically - each transaction should update the utxo state
 func ValidateBlock(block block.Block) bool {
+	header := block.Header
+	transactions := block.Body
+	prevHash, prevBlockNum, success := chain.GetLastBlockInfo()
+	// Previous block is retrievable
+	if !success {
+		return false
+	}
+
+	// PreviousBlockHash corresponds to last block
+	if bytes.Compare(prevHash[:], header.PreviousBlockHash[:]) != 0 {
+		return false
+	}
+
+	var transactionHashes [][]byte
+	for i, tx := range transactions {
+		// Check that each transaction is valid
+		// TODO: UPDATE STATE IN BETWEEN CHECKING IF TRANSACTIONS ARE VALID
+		if !ValidateTransaction(tx) {
+			return false
+		}
+
+		hash := tx.Hash()
+		transactionHashes[i] = hash[:]
+	}
+	allTransactionsHash := crypto.HashBytes(util.ConcatByteSlices(transactionHashes))
+	// AllTransactionsHash is the hash of all transactionns
+	if bytes.Compare(allTransactionsHash[:], header.AllTransactionsHash[:]) != 0 {
+		return false
+	}
+
+	blockNum := prevBlockNum + 1
+	targetHeader := protocol.ComputeTarget(blockNum)
+	// Check that the selected target is correct
+	if bytes.Compare(targetHeader[:], header.Target[:]) != 0 {
+		return false
+	}
+
+	headerHash := header.Hash()
+	target := protocol.GetFullTargetFromHeader(targetHeader)
+	// Check that the computed hash is valid based on the target
+	if bytes.Compare(headerHash[:], target[:]) >= 0 {
+		return false
+	}
+
 	return true
 }
 
