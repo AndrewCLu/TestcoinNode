@@ -24,7 +24,7 @@ func NewAccount() account.Account {
 }
 
 // Creates a new coinbase transaction for a given account
-func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
+func NewCoinbaseTransaction(account account.Account, readableAmount float64) transaction.Transaction {
 	address := account.GetAddress()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 
@@ -36,14 +36,15 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) {
 
 	if !success || !ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new coinbase transaction and FAILED")
-		return
+		return transaction.Transaction{}
 	}
 
 	chain.AddPendingTransaction(newTransaction)
+	return newTransaction
 }
 
 // Creates a new peer transaction for a given amount
-func NewPeerTransaction(account account.Account, receiverAddress [protocol.AddressLength]byte, readableAmount float64) {
+func NewPeerTransaction(account account.Account, receiverAddress [protocol.AddressLength]byte, readableAmount float64) transaction.Transaction {
 	senderAddress := account.GetAddress()
 	senderPublicKey := account.GetPublicKey()
 	senderPrivateKey := account.GetPrivateKey()
@@ -53,7 +54,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 	senderValue := GetAccountValue(senderAddress)
 	if senderValue < amount {
 		fmt.Printf("Attempted to create new peer transaction but sender has insufficient funds.")
-		return
+		return transaction.Transaction{}
 	}
 
 	outputPointers, _ := chain.GetUnspentTransactions(senderAddress)
@@ -99,10 +100,11 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 
 	if !success || !ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new peer transaction and FAILED")
-		return
+		return transaction.Transaction{}
 	}
 
 	chain.AddPendingTransaction(newTransaction)
+	return newTransaction
 }
 
 // Gets the value of an account based on an address
