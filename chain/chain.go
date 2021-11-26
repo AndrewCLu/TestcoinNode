@@ -53,7 +53,69 @@ func GetLastBlockInfo() (hash [crypto.HashLength]byte, blockNum int, success boo
 	return lastBlockHash, len(blocks) - 1, true
 }
 
+// Adds a transaction to the chain
+// TODO: Make this atomic - either it updates entire state if success or not at all
+func AddTransaction(tx transaction.Transaction) (success bool) {
+	// Find matching pending transaction
+	ind := -1
+	for i, ptx := range pendingTransactions {
+		if tx.Equal(ptx) {
+			ind = i
+		}
+	}
+
+	// No pending transaction matches
+	if ind == -1 {
+		return false
+	}
+
+	// Remove pending transaction at index ind
+	pendingTransactions[ind] = pendingTransactions[len(pendingTransactions)-1]
+	pendingTransactions = pendingTransactions[:len(pendingTransactions)-1]
+
+	// Add new transaction
+	txHash := tx.Hash()
+	transactions[txHash] = tx
+
+	for _, input := range tx.Inputs {
+		ptr := input.OutputPointer
+		// TODO: Check if tx or output doesn't exist
+		outputTx := transactions[ptr.TransactionHash]
+		address := outputTx.Outputs[ptr.OutputIndex].ReceiverAddress
+
+		// Find matching utxo
+		utxoInd := -1
+		for j, utxoPtr := range unspentOutputs[address] {
+			if ptr.Equal(utxoPtr) {
+				utxoInd = j
+			}
+		}
+
+		// No utxo pointer matches
+		if utxoInd == -1 {
+			return false
+		}
+
+		// Remove utxo pointer at index utxoInd
+		unspentOutputs[address][utxoInd] = unspentOutputs[address][len(unspentOutputs[address])-1]
+		unspentOutputs[address] = unspentOutputs[address][:len(unspentOutputs[address])-1]
+	}
+
+	for outputIndex, output := range tx.Outputs {
+		// Put new utxo pointer in
+		outputPointer := transaction.TransactionOutputPointer{
+			TransactionHash: txHash,
+			OutputIndex:     uint16(outputIndex),
+		}
+		receiverAddress := output.ReceiverAddress
+		unspentOutputs[receiverAddress] = append(unspentOutputs[receiverAddress], outputPointer)
+	}
+
+	return true
+}
+
 // Add a block to the chain
+// TODO: Make this atomic - either it updates entire state if success or not at all
 func AddBlock(block block.Block) (success bool) {
 	// Add block to blocks
 	// Update block hash
