@@ -1,10 +1,13 @@
 package chain
 
 import (
+	"fmt"
+
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
+	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
 var blocks map[[crypto.HashLength]byte]block.Block                   // Stores all previous blocks
@@ -156,4 +159,41 @@ func GetOutputAmount(ptr transaction.TransactionOutputPointer) (amount uint64, s
 	output := tx.Outputs[index]
 
 	return output.Amount, true
+}
+
+// Gets the value of an account based on an address
+func GetAccountValue(address [protocol.AddressLength]byte) uint64 {
+	var total uint64 = 0
+	outputPointers, _ := GetUnspentTransactions(address)
+	for _, ptr := range outputPointers {
+		amount, _ := GetOutputAmount(ptr)
+		total += amount
+	}
+
+	return total
+}
+
+func PrintChainState() {
+	fmt.Printf("Blocks mined...\n")
+	for _, block := range blocks {
+		fmt.Printf("Block: %v\n", util.HashToHexString(block.Hash()))
+	}
+
+	fmt.Printf("Transactions confirmed...\n")
+	for _, tx := range transactions {
+		fmt.Printf("Transaction: %v\n", util.HashToHexString(tx.Hash()))
+	}
+
+	fmt.Printf("Unspent transactions...\n")
+	for address, outputList := range unspentOutputs {
+		amount := util.Uint64UnitToFloat64Unit(GetAccountValue(address))
+		fmt.Printf("Account %v has value %v", util.HashToHexString(address), amount)
+		for _, output := range outputList {
+			fmt.Printf("Account %v has unspent output at transaction %v index %v",
+				util.HashToHexString(address),
+				util.HashToHexString(output.TransactionHash),
+				output.OutputIndex,
+			)
+		}
+	}
 }

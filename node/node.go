@@ -5,6 +5,7 @@ import (
 
 	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/chain"
+	"github.com/AndrewCLu/TestcoinNode/miner"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
@@ -39,6 +40,7 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) tra
 		return transaction.Transaction{}
 	}
 
+	fmt.Printf("Created new coinbase transaction sending %v to %v\n", readableAmount, util.HashToHexString(address))
 	chain.AddPendingTransaction(newTransaction)
 	return newTransaction
 }
@@ -103,30 +105,34 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		return transaction.Transaction{}
 	}
 
+	fmt.Printf("Created new peer transaction sending %v from %v to %v", readableAmount, util.HashToHexString(senderAddress), util.HashToHexString(receiverAddress))
 	chain.AddPendingTransaction(newTransaction)
 	return newTransaction
 }
 
-// Gets the value of an account based on an address
-func GetAccountValue(address [protocol.AddressLength]byte) uint64 {
-	var total uint64 = 0
-	outputPointers, _ := chain.GetUnspentTransactions(address)
-	for _, ptr := range outputPointers {
-		amount, _ := chain.GetOutputAmount(ptr)
-		total += amount
-	}
+// Calls the miner to mine a block and adds it to the chain if it is valid
+func MineBlock() {
+	block := miner.MineBlock()
+	valid := ValidateBlock(block)
 
-	return total
+	if valid {
+		chain.AddBlock(block)
+	}
 }
 
 // Gets the human readable value of an account
 func GetReadableAccountValue(account account.Account) float64 {
 	address := account.GetAddress()
 
-	total := GetAccountValue(address)
+	total := chain.GetAccountValue(address)
 	readableTotal := util.Uint64UnitToFloat64Unit(total)
 
 	fmt.Printf("Account with address %v has value %v\n", util.AddressToHexString(address), readableTotal)
 
 	return readableTotal
+}
+
+// Testing function to print the state of the chain
+func PrintChainState() {
+	chain.PrintChainState()
 }

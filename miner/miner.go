@@ -24,7 +24,7 @@ func MineBlock() block.Block {
 
 	blockHash := block.Hash()
 	for _, tx := range block.Body {
-		fmt.Printf("Block %v confirmed transaction %v", util.HashToHexString(blockHash), util.HashToHexString(tx.Hash()))
+		fmt.Printf("Block %v confirmed transaction %v\n", util.HashToHexString(blockHash), util.HashToHexString(tx.Hash()))
 	}
 
 	return block
