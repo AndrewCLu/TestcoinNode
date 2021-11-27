@@ -5,6 +5,7 @@ import (
 
 	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/chain"
+	"github.com/AndrewCLu/TestcoinNode/consensus"
 	"github.com/AndrewCLu/TestcoinNode/miner"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
@@ -35,7 +36,7 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) tra
 		[]transaction.TransactionOutput{output},
 	)
 
-	if !success || !ValidateTransaction(newTransaction) {
+	if !success || !consensus.ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new coinbase transaction and FAILED")
 		return transaction.Transaction{}
 	}
@@ -69,7 +70,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 	// TODO: Pick the minimum number of utxos an account can use to complete a transaction
 	inputs := []transaction.TransactionInput{}
 	for _, ptr := range outputPointers {
-		signature := SignInput(senderPrivateKey, ptr)
+		signature := consensus.SignInput(senderPrivateKey, ptr)
 
 		verification := transaction.TransactionInputVerification{
 			Signature:        signature,
@@ -104,7 +105,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 
 	newTransaction, success := transaction.NewTransaction(inputs, outputs)
 
-	if !success || !ValidateTransaction(newTransaction) {
+	if !success || !consensus.ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new peer transaction and FAILED")
 		return transaction.Transaction{}
 	}
@@ -122,7 +123,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 // Calls the miner to mine a block and adds it to the chain if it is valid
 func MineBlock() {
 	block := miner.MineBlock()
-	valid := ValidateBlock(block)
+	valid := consensus.ValidateBlock(block)
 
 	if valid {
 		chain.AddBlock(block)

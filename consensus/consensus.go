@@ -1,4 +1,4 @@
-package node
+package consensus
 
 import (
 	"bytes"
@@ -113,6 +113,7 @@ func ValidateBlock(block block.Block) bool {
 }
 
 // Signs a transaction input
+// TODO: Should return a transaction input verification
 func SignInput(privateKey []byte,
 	outputPointer transaction.TransactionOutputPointer,
 ) (signature [transaction.TransactionSignatureLength]byte) {
@@ -127,6 +128,7 @@ func SignInput(privateKey []byte,
 }
 
 // Verifies the signature of a transaction input
+// TODO: Should accept a transaction input verification
 func VerifyInput(publicKey []byte,
 	outputPointer transaction.TransactionOutputPointer,
 	signature [transaction.TransactionSignatureLength]byte,
