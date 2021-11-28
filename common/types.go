@@ -7,6 +7,7 @@ import (
 const (
 	HashLength    = 32
 	AddressLength = 32
+	TargetLength  = 4 // A target represents the first 4 bytes of the hash a block must compare itself to
 )
 
 // A hash is a 32 byte SHA256 hash of data.
@@ -61,4 +62,40 @@ func (a Address) Bytes() []byte {
 // Converts an address into a hex string.
 func (a Address) Hex() string {
 	return hex.EncodeToString(a.Bytes())
+}
+
+// A target is the first 4 bytes of the hash a block must compare itself to while mining.
+type Target [TargetLength]byte
+
+func BytesToTarget(bytes []byte) Target {
+	var t Target
+
+	if len(bytes) > TargetLength {
+		bytes = bytes[:TargetLength]
+	}
+
+	copy(t[:], bytes)
+
+	return t
+}
+
+// Converts a target into bytes.
+func (t Target) Bytes() []byte {
+	return t[:]
+}
+
+// Returns the full hash of a target for block hashes to compare themselves to
+func (t Target) FullHash() Hash {
+	var full [HashLength]byte
+
+	for i := 0; i < TargetLength; i++ {
+		full[i] = t[i]
+	}
+
+	// Fills rest of hash with zeros
+	for i := TargetLength; i < HashLength; i++ {
+		full[i] = byte(255)
+	}
+
+	return full
 }
