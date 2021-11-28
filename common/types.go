@@ -2,12 +2,13 @@ package common
 
 import (
 	"encoding/hex"
+	"reflect"
 )
 
 const (
-	HashLength    = 32
-	AddressLength = 32
-	TargetLength  = 4 // A target represents the first 4 bytes of the hash a block must compare itself to
+	HashLength    = 32 // The length of a SHA256 hash
+	AddressLength = 32 // The length of a Testcoin address
+	TargetLength  = 4  // A target represents the first 4 bytes of the hash a block must compare itself to
 )
 
 // A hash is a 32 byte SHA256 hash of data.
@@ -37,6 +38,11 @@ func (h Hash) Hex() string {
 	return hex.EncodeToString(h.Bytes())
 }
 
+// Returns true if two hashes are equal else false
+func (h1 Hash) Equal(h2 Hash) bool {
+	return reflect.DeepEqual(h1, h2)
+}
+
 // An address is a 32 byte address of a Testcoin account.
 type Address [AddressLength]byte
 
@@ -62,6 +68,11 @@ func (a Address) Bytes() []byte {
 // Converts an address into a hex string.
 func (a Address) Hex() string {
 	return hex.EncodeToString(a.Bytes())
+}
+
+// Returns true if two hashes are equal else false
+func (a1 Address) Equal(a2 Address) bool {
+	return reflect.DeepEqual(a1, a2)
 }
 
 // A target is the first 4 bytes of the hash a block must compare itself to while mining.
