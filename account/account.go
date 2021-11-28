@@ -1,6 +1,8 @@
 package account
 
 import (
+	"fmt"
+
 	"github.com/AndrewCLu/TestcoinNode/common"
 	"github.com/AndrewCLu/TestcoinNode/crypto"
 )
@@ -13,8 +15,14 @@ type Account struct {
 }
 
 // Generates a new account with a new pair of public and private keys
-func NewAccount() *Account {
-	encodedPublicKey, encodedPrivateKey := crypto.NewDigitalSignatureKeys()
+// Returns a boolean indicating success
+func NewAccount() (*Account, bool) {
+	encodedPublicKey, encodedPrivateKey, err := crypto.NewDigitalSignatureKeys()
+	if err != nil {
+		fmt.Println(err)
+		return nil, false
+	}
+
 	address := GetAddressFromPublicKey(encodedPublicKey)
 
 	account := Account{
@@ -23,7 +31,7 @@ func NewAccount() *Account {
 		PrivateKey: encodedPrivateKey,
 	}
 
-	return &account
+	return &account, true
 }
 
 // Given a public key, return the corresponding address

@@ -10,7 +10,7 @@ import (
 
 // Generates an ECDSA public private key pair
 func newECDSAKeyPair() (publicKey *ecdsa.PublicKey, privateKey *ecdsa.PrivateKey, err error) {
-	publicKeyCurve := elliptic.P256()
+	publicKeyCurve := elliptic.P256() // Using elliptic curve P256
 
 	privateKey, err = ecdsa.GenerateKey(publicKeyCurve, rand.Reader)
 
