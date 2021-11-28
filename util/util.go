@@ -2,38 +2,36 @@ package util
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"math"
 
-	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
 
-func AddressToHexString(bytes [protocol.AddressLength]byte) string {
-	return hex.EncodeToString(bytes[:])
-}
+// func AddressToHexString(bytes [protocol.AddressLength]byte) string {
+// 	return hex.EncodeToString(bytes[:])
+// }
 
-func HexStringToAddress(str string) [protocol.AddressLength]byte {
-	var address [protocol.AddressLength]byte
-	decodedBytes, _ := hex.DecodeString(str)
+// func HexStringToAddress(str string) [protocol.AddressLength]byte {
+// 	var address [protocol.AddressLength]byte
+// 	decodedBytes, _ := hex.DecodeString(str)
 
-	copy(address[:], decodedBytes)
+// 	copy(address[:], decodedBytes)
 
-	return address
-}
+// 	return address
+// }
 
-func HashToHexString(bytes [crypto.HashLength]byte) string {
-	return hex.EncodeToString(bytes[:])
-}
+// func HashToHexString(bytes [crypto.HashLength]byte) string {
+// 	return hex.EncodeToString(bytes[:])
+// }
 
-func HexStringToHash(str string) [crypto.HashLength]byte {
-	var hash [crypto.HashLength]byte
-	decodedBytes, _ := hex.DecodeString(str)
+// func HexStringToHash(str string) [crypto.HashLength]byte {
+// 	var hash [crypto.HashLength]byte
+// 	decodedBytes, _ := hex.DecodeString(str)
 
-	copy(hash[:], decodedBytes)
+// 	copy(hash[:], decodedBytes)
 
-	return hash
-}
+// 	return hash
+// }
 
 func ConcatByteSlices(slices [][]byte) []byte {
 	var totalLen int
