@@ -6,7 +6,10 @@ import (
 
 // Tests signing and verification using newly generated digital signature keys
 func TestSignVerifyWithDigitalSignatureKeys(t *testing.T) {
-	encodedPublicKey, encodedPrivateKey := NewDigitalSignatureKeys()
+	encodedPublicKey, encodedPrivateKey, err := NewDigitalSignatureKeys()
+	if err != nil {
+		t.Fatalf(`Failed to create new digital signature keys`)
+	}
 
 	bytesA := []byte("Go BTC")
 	bytesB := []byte("Go ETH")

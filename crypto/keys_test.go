@@ -6,9 +6,20 @@ import (
 
 // Tests encoding and decoding of a public ECDSA key
 func TestEncodeDecodePublicKey(t *testing.T) {
-	publicKey, _, _ := newECDSAKeyPair()
-	encodedBytes, _ := encodePublicKey(publicKey)
-	decodedPublicKey, _ := decodePublicKey(encodedBytes)
+	publicKey, _, err := newECDSAKeyPair()
+	if err != nil {
+		t.Fatalf(`Failed to create new digital signature keys`)
+	}
+
+	encodedBytes, err := encodePublicKey(publicKey)
+	if err != nil {
+		t.Fatalf(`Failed to encode public key`)
+	}
+
+	decodedPublicKey, err := decodePublicKey(encodedBytes)
+	if err != nil {
+		t.Fatalf(`Failed to decode public key`)
+	}
 
 	if !publicKey.Equal(decodedPublicKey) {
 		t.Fatalf(`Public keys do not match. Original: %v, Decoded: %v`, publicKey, decodedPublicKey)
@@ -17,9 +28,20 @@ func TestEncodeDecodePublicKey(t *testing.T) {
 
 // Tests encoding and decoding of a private ECDSA key
 func TestEncodeDecodePrivateKey(t *testing.T) {
-	_, privateKey, _ := newECDSAKeyPair()
-	encodedBytes, _ := encodePrivateKey(privateKey)
-	decodedPrivateKey, _ := decodePrivateKey(encodedBytes)
+	_, privateKey, err := newECDSAKeyPair()
+	if err != nil {
+		t.Fatalf(`Failed to create new digital signature keys`)
+	}
+
+	encodedBytes, err := encodePrivateKey(privateKey)
+	if err != nil {
+		t.Fatalf(`Failed to encode private key`)
+	}
+
+	decodedPrivateKey, err := decodePrivateKey(encodedBytes)
+	if err != nil {
+		t.Fatalf(`Failed to decode private key`)
+	}
 
 	if !privateKey.Equal(decodedPrivateKey) {
 		t.Fatalf(`Private keys do not match. Original: %v, Decoded: %v`, privateKey, decodedPrivateKey)
