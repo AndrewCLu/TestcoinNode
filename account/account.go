@@ -1,41 +1,32 @@
 package account
 
 import (
+	"github.com/AndrewCLu/TestcoinNode/common"
 	"github.com/AndrewCLu/TestcoinNode/crypto"
-	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
 
+// An account represents a Testcoin user that is using this node as their wallet
 type Account struct {
-	address           [protocol.AddressLength]byte
-	encodedPublicKey  []byte
-	encodedPrivateKey []byte
+	Address    common.Address // The public address of the wallet
+	PublicKey  []byte         // The x509 encoded public key of the wallet
+	PrivateKey []byte         // The x509 encoded private key of the wallet
 }
 
-func NewAccount() Account {
+// Generates a new account with a new pair of public and private keys
+func NewAccount() *Account {
 	encodedPublicKey, encodedPrivateKey := crypto.NewDigitalSignatureKeys()
 	address := GetAddressFromPublicKey(encodedPublicKey)
 
 	account := Account{
-		address:           address,
-		encodedPublicKey:  encodedPublicKey,
-		encodedPrivateKey: encodedPrivateKey,
+		Address:    address,
+		PublicKey:  encodedPublicKey,
+		PrivateKey: encodedPrivateKey,
 	}
 
-	return account
+	return &account
 }
 
-func GetAddressFromPublicKey(publicKey []byte) (address [protocol.AddressLength]byte) {
-	return crypto.HashBytes(publicKey)
-}
-
-func (a Account) GetAddress() [protocol.AddressLength]byte {
-	return a.address
-}
-
-func (a Account) GetPublicKey() []byte {
-	return a.encodedPublicKey
-}
-
-func (a Account) GetPrivateKey() []byte {
-	return a.encodedPrivateKey
+// Given a public key, return the corresponding address
+func GetAddressFromPublicKey(publicKey []byte) common.Address {
+	return common.BytesToAddress(crypto.HashBytes(publicKey).Bytes())
 }
