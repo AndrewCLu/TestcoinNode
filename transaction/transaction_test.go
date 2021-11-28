@@ -3,13 +3,13 @@ package transaction
 import (
 	"testing"
 
-	"github.com/AndrewCLu/TestcoinNode/protocol"
+	"github.com/AndrewCLu/TestcoinNode/common"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
 // Tests that converting a transaction into a byte array and back yields the same transaction
 func TestTransactionToByteArray(t *testing.T) {
-	address := [protocol.AddressLength]byte{2, 3}
+	address := [common.AddressLength]byte{2, 3}
 	amount := util.Float64UnitToUnit64Unit(69.69)
 
 	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
@@ -22,9 +22,9 @@ func TestTransactionToByteArray(t *testing.T) {
 		t.Fatalf(`Failed to create a new coinbase transaction.`)
 	}
 
-	transactionBytes := transaction.TransactionToByteArray()
+	transactionBytes := transaction.Bytes()
 
-	decodedTransaction := ByteArrayToTransaction(transactionBytes)
+	decodedTransaction := BytesToTransaction(transactionBytes)
 
 	if !transaction.Equal(decodedTransaction) {
 		t.Fatalf(`Decoded transaction is not equal to original. Original: %v, Decoded: %v`, transaction, decodedTransaction)
