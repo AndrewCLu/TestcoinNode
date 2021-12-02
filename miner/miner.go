@@ -12,13 +12,30 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-func MineBlock() block.Block {
-	txs, _ := chain.GetPendingTransactions(protocol.MaxTransactionsInBlock)
-	lastBlockHash, lastBlockNum, _ := chain.GetLastBlockInfo()
+// Tries to mine a block from pending transactions on the chain
+// Returns the block and a boolean indicating success
+// TODO: Have better selection criteria for transactions
+func MineBlock() (blk *block.Block, ok bool) {
+	txs, txOk := chain.GetPendingTransactions(protocol.MaxTransactionsInBlock)
+	if !txOk {
+		fmt.Printf("Could not get transactions from the current chain")
+		return nil, false
+	}
+
+	lastBlockHash, lastBlockNum, lastBlockOk := chain.GetLastBlockInfo()
+	if !lastBlockOk {
+		fmt.Printf("Could not get last block from current chain")
+		return nil, false
+	}
 	blockNum := lastBlockNum + 1
 
-	block, _ := block.NewBlock(lastBlockHash, blockNum, txs)
+	block, blockOk := block.NewBlock(lastBlockHash, blockNum, txs)
+	if !blockOk {
+		fmt.Printf("Failed to create new block")
+		return nil, false
+	}
 
+	// Compute the nonce that solves a block header
 	nonce := Solve(block.Header)
 	block.Header.Nonce = nonce
 
@@ -27,7 +44,7 @@ func MineBlock() block.Block {
 		fmt.Printf("Block %v confirmed transaction %v\n", util.HashToHexString(blockHash), util.HashToHexString(tx.Hash()))
 	}
 
-	return block
+	return *block
 }
 
 // Given a block header, compute the nonce that results in a hash under the desired target
