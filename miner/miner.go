@@ -8,13 +8,44 @@ import (
 
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
+	"github.com/AndrewCLu/TestcoinNode/common"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
+
+const DefaultHashLimit := 1 * 1000 * 1000 // The maximum number of hashes a miner will attempt to solve a block
+
+// The configuration for a miner
+type MinerConfig struct {
+	HashLimit int
+}
+
+// Creates blocks and solves proof of work
+type Miner struct {
+	Coinbase common.Address
+	Config   *MinerConfig
+}
+
+// Creates and returns the address of a new Miner
+// Returns a bool indicating success
+// TODO: Enable users to set up miners with non-default values
+func NewMiner(coinbase common.Address) *Miner, bool {
+	defaultConfig := MinerConfig{
+		HashLimit: DefaultHashLimit,
+	}
+
+	miner := Miner{
+		Coinbase: coinbase,
+		Config: defaultConfig,
+	}
+
+	return *miner, true
+}
 
 // Tries to mine a block from pending transactions on the chain
 // Returns the block and a boolean indicating success
 // TODO: Have better selection criteria for transactions
-func MineBlock() (blk *block.Block, ok bool) {
+// TOOD: Add a coinbase transaction for the miner
+func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 	txs, txOk := chain.GetPendingTransactions(protocol.MaxTransactionsInBlock)
 	if !txOk {
 		fmt.Println("Could not get transactions from the current chain")
@@ -35,7 +66,7 @@ func MineBlock() (blk *block.Block, ok bool) {
 	}
 
 	// Compute the nonce that solves a block header
-	nonce := Solve(block.Header)
+	nonce := miner.solve(block.Header)
 	block.Header.Nonce = nonce
 
 	blockHash := block.Hash()
@@ -49,11 +80,11 @@ func MineBlock() (blk *block.Block, ok bool) {
 // Given a block header, compute the nonce that results in a hash under the desired target
 // Does not modify the block header passed in
 // TOOD: Make sure Solve does not modify the original header
-func Solve(header block.BlockHeader) uint32 {
+func (miner *Miner) solve(header block.BlockHeader) (nonce uint32, ok bool) {
 	// Start the nonce at a random number to avoid multiple nodes mining the same nonces
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)
-	var nonce uint32 = r.Uint32()
+	nonce = r.Uint32()
 
 	// Represent target as a full hash to compare block hash to
 	target := protocol.GetFullTargetFromHeader(header.Target)
@@ -61,8 +92,7 @@ func Solve(header block.BlockHeader) uint32 {
 	t1 := time.Now()
 	fmt.Printf("Solving block with target %v ...\n", target.Hex())
 
-	count := 0
-	for true {
+	for count = 0; count < miner.Config.HashLimit; count++ {
 		count += 1
 		header.Nonce = nonce
 		hash := header.Hash()
@@ -72,11 +102,14 @@ func Solve(header block.BlockHeader) uint32 {
 			diff := t2.Sub(t1)
 
 			fmt.Printf("Successfully found nonce %v with %v tries in time %v, yielding hash %v\n", nonce, count, diff, hash.Hex())
-			return nonce
+			ok = true
+			return 
 		}
 
 		nonce += 1
 	}
 
-	return nonce
+	// Failed to find an appropriate nonce
+	ok = false
+	return 
 }
