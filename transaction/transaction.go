@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/AndrewCLu/TestcoinNode/common"
@@ -304,7 +303,10 @@ func (t Transaction) Hash() common.Hash {
 
 // Checks if two transactions are equal
 func (ta Transaction) Equal(tb Transaction) bool {
-	return reflect.DeepEqual(ta.Hash(), tb.Hash())
+	hasha := ta.Hash()
+	hashb := tb.Hash()
+
+	return hasha.Equal(hashb)
 }
 
 // Checks if two unspent transaction outputs are equal
