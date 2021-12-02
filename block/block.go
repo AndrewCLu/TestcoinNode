@@ -1,39 +1,52 @@
 package block
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/AndrewCLu/TestcoinNode/common"
 	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
+// A block is a collection of transactions with a header containing metadata
 type Block struct {
 	Header BlockHeader               `json:"header"`
 	Body   []transaction.Transaction `json:"body"`
 }
 
+// A block header describes metatdata of a block, including a hash of its transactions,
+// the previous block hash, a mining difficulty target, and a nonce
 type BlockHeader struct {
-	ProtocolVersion     uint16                      `json:"protocolVersion"`
-	PreviousBlockHash   [crypto.HashLength]byte     `json:"previousBlockHash"`
-	AllTransactionsHash [crypto.HashLength]byte     `json:"allTransactionsHash"`
-	Timestamp           time.Time                   `json:"timestamp"`
-	Target              [protocol.TargetLength]byte `json:"target"`
-	Nonce               uint32                      `json:"nonce"`
+	ProtocolVersion     uint16        `json:"protocolVersion"`
+	PreviousBlockHash   common.Hash   `json:"previousBlockHash"`
+	AllTransactionsHash common.Hash   `json:"allTransactionsHash"`
+	Timestamp           time.Time     `json:"timestamp"`
+	Target              common.Target `json:"target"`
+	Nonce               uint32        `json:"nonce"`
 }
 
-func NewBlock(previousBlockHash [crypto.HashLength]byte, currentBlockNumber int, transactions []transaction.Transaction) (Block, error) {
+// Generates a new block given the state of the previous blocks and a list of transactions
+// Returns a pointer to the block if valid block can be generated
+func NewBlock(
+	previousBlockHash common.Hash,
+	currentBlockNumber int,
+	transactions []transaction.Transaction,
+) (blk *Block, ok bool) {
+	// Check number of transactions is under the limit
+	// TODO: Enforce limit based on byte size of block
 	if len(transactions) > protocol.MaxTransactionsInBlock {
-		return Block{}, errors.New("Number of transactions exceeds max allowable.")
+		fmt.Println("Number of transactions exceeds max allowable.")
+		return nil, false
 	}
 
+	// Hash all the transactions
 	transactionHashes := make([][]byte, len(transactions))
 	for i, tx := range transactions {
 		hash := tx.Hash()
-		transactionHashes[i] = hash[:]
+		transactionHashes[i] = hash.Bytes()
 	}
 	allTransactionsHash := crypto.HashBytes(util.ConcatByteSlices(transactionHashes))
 
@@ -51,7 +64,7 @@ func NewBlock(previousBlockHash [crypto.HashLength]byte, currentBlockNumber int,
 		Body:   transactions,
 	}
 
-	return block, nil
+	return &block, true
 }
 
 func (header BlockHeader) BlockHeaderToByteArray() []byte {

@@ -60,7 +60,7 @@ type TransactionOutput struct {
 func NewTransaction(
 	inputs []TransactionInput,
 	outputs []TransactionOutput,
-) (t *Transaction, success bool) {
+) (t *Transaction, ok bool) {
 
 	transaction := Transaction{
 		ProtocolVersion: protocol.CurrentProtocolVersion,
