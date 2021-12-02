@@ -12,7 +12,7 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
 
-const DefaultHashLimit := 1 * 1000 * 1000 // The maximum number of hashes a miner will attempt to solve a block
+const DefaultHashLimit := 10 * 1000 * 1000 // The maximum number of hashes a miner will attempt to solve a block
 
 // The configuration for a miner
 type MinerConfig struct {
@@ -66,7 +66,11 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 	}
 
 	// Compute the nonce that solves a block header
-	nonce := miner.solve(block.Header)
+	nonce, solveOk := miner.solve(block.Header)
+	if !solveOk {
+		fmt.Println("Failed to solve block with allotted parameters")
+		return nil, false
+	}
 	block.Header.Nonce = nonce
 
 	blockHash := block.Hash()

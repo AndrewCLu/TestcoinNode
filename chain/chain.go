@@ -4,39 +4,39 @@ import (
 	"fmt"
 
 	"github.com/AndrewCLu/TestcoinNode/block"
+	"github.com/AndrewCLu/TestcoinNode/common"
 	"github.com/AndrewCLu/TestcoinNode/crypto"
-	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-var blocks map[[crypto.HashLength]byte]block.Block                   // Stores all previous blocks
-var transactions map[[crypto.HashLength]byte]transaction.Transaction // Stores all previous transactions
+var blocks map[common.Hash]block.Block                   // Stores all previous blocks
+var transactions map[common.Hash]transaction.Transaction // Stores all previous transactions
 
-var lastBlockHash [crypto.HashLength]byte                                                  // Last block hash
-var pendingTransactions []transaction.Transaction                                          // All transactions that have not been processed yet
-var unspentOutputs map[[protocol.AddressLength]byte][]transaction.TransactionOutputPointer // All utxos
+var lastBlockHash common.Hash                                                // Last block hash
+var pendingTransactions []transaction.Transaction                            // All transactions that have not been processed yet
+var unspentOutputs map[common.Address][]transaction.TransactionOutputPointer // All utxos
 
 func InitializeChain() {
 	genesisBlock, _ := block.NewBlock(crypto.HashBytes([]byte("first")), 0, []transaction.Transaction{})
 	genesisBlockHash := genesisBlock.Hash()
-	blocks = make(map[[crypto.HashLength]byte]block.Block)
+	blocks = make(map[common.Hash]block.Block)
 	blocks[genesisBlockHash] = genesisBlock
 	lastBlockHash = genesisBlockHash
 
 	pendingTransactions = []transaction.Transaction{}
-	transactions = make(map[[crypto.HashLength]byte]transaction.Transaction)
-	unspentOutputs = make(map[[protocol.AddressLength]byte][]transaction.TransactionOutputPointer)
+	transactions = make(map[common.Hash]transaction.Transaction)
+	unspentOutputs = make(map[common.Address][]transaction.TransactionOutputPointer)
 }
 
 // Gets a recorded transaction
-func GetTransaction(hash [crypto.HashLength]byte) (tx transaction.Transaction, success bool) {
+func GetTransaction(hash common.Hash) (tx transaction.Transaction, ok bool) {
 	return transactions[hash], true
 }
 
 // Gets num pending transactions
 // TODO: Have a ranking of pending transactions to retrieve by time added or miner fee
-func GetPendingTransactions(num int) (txs []transaction.Transaction, success bool) {
+func GetPendingTransactions(num int) (txs []transaction.Transaction, ok bool) {
 	if num > len(pendingTransactions) {
 		return pendingTransactions, true
 	}
@@ -45,20 +45,20 @@ func GetPendingTransactions(num int) (txs []transaction.Transaction, success boo
 }
 
 // Add a pending transaction to the list
-func AddPendingTransaction(tx transaction.Transaction) (success bool) {
+func AddPendingTransaction(tx transaction.Transaction) (ok bool) {
 	pendingTransactions = append(pendingTransactions, tx)
 
 	return true
 }
 
 // Get information about the last block in the chain
-func GetLastBlockInfo() (hash [crypto.HashLength]byte, blockNum int, success bool) {
+func GetLastBlockInfo() (hash common.Hash, blockNum int, ok bool) {
 	return lastBlockHash, len(blocks) - 1, true
 }
 
 // Adds a transaction to the chain
 // TODO: Make this atomic - either it updates entire state if success or not at all
-func AddTransaction(tx transaction.Transaction) (success bool) {
+func AddTransaction(tx transaction.Transaction) (ok bool) {
 	// Find matching pending transaction
 	ind := -1
 	for i, ptx := range pendingTransactions {
@@ -146,7 +146,7 @@ func AddBlock(block block.Block) (success bool) {
 }
 
 // Get all unspent output pointers for a given address
-func GetUnspentTransactions(address [protocol.AddressLength]byte) (outputPointers []transaction.TransactionOutputPointer, success bool) {
+func GetUnspentTransactions(address common.Address) (outputPointers []transaction.TransactionOutputPointer, ok bool) {
 	return unspentOutputs[address], true
 }
 
@@ -162,7 +162,7 @@ func GetOutputAmount(ptr transaction.TransactionOutputPointer) (amount uint64, s
 }
 
 // Gets the value of an account based on an address
-func GetAccountValue(address [protocol.AddressLength]byte) uint64 {
+func GetAccountValue(address common.Address) uint64 {
 	var total uint64 = 0
 	outputPointers, _ := GetUnspentTransactions(address)
 	for _, ptr := range outputPointers {
