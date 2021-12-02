@@ -67,6 +67,13 @@ func NewBlock(
 	return &block, true
 }
 
+// Returns a pointer to hard coded genesis block
+func GetGenesisBlock() *Block {
+	block, _ := NewBlock(crypto.HashBytes([]byte("first")), 0, []transaction.Transaction{})
+
+	return block
+}
+
 // Converts a BlockHeader into byte representation
 func (header BlockHeader) Bytes() []byte {
 	versionBytes := util.Uint16ToBytes(header.ProtocolVersion)

@@ -5,28 +5,28 @@ import (
 
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/common"
-	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-var blocks map[common.Hash]block.Block                   // Stores all previous blocks
-var transactions map[common.Hash]transaction.Transaction // Stores all previous transactions
+var blocks map[common.Hash]*block.Block                   // Stores all previous blocks
+var transactions map[common.Hash]*transaction.Transaction // Stores all previous transactions
 
-var lastBlockHash common.Hash                                                // Last block hash
-var pendingTransactions []transaction.Transaction                            // All transactions that have not been processed yet
-var unspentOutputs map[common.Address][]transaction.TransactionOutputPointer // All utxos
+var lastBlockHash common.Hash                                                 // Last block hash
+var pendingTransactions []*transaction.Transaction                            // All transactions that have not been processed yet
+var unspentOutputs map[common.Address][]*transaction.TransactionOutputPointer // All utxos
 
 func InitializeChain() {
-	genesisBlock, _ := block.NewBlock(crypto.HashBytes([]byte("first")), 0, []transaction.Transaction{})
+	// Set up the genesis block
+	genesisBlock := block.GetGenesisBlock()
 	genesisBlockHash := genesisBlock.Hash()
-	blocks = make(map[common.Hash]block.Block)
+	blocks = make(map[common.Hash]*block.Block)
 	blocks[genesisBlockHash] = genesisBlock
 	lastBlockHash = genesisBlockHash
 
-	pendingTransactions = []transaction.Transaction{}
-	transactions = make(map[common.Hash]transaction.Transaction)
-	unspentOutputs = make(map[common.Address][]transaction.TransactionOutputPointer)
+	pendingTransactions = []*transaction.Transaction{}
+	transactions = make(map[common.Hash]*transaction.Transaction)
+	unspentOutputs = make(map[common.Address][]*transaction.TransactionOutputPointer)
 }
 
 // Gets a recorded transaction
