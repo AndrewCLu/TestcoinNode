@@ -67,19 +67,20 @@ func NewBlock(
 	return &block, true
 }
 
-func (header BlockHeader) BlockHeaderToByteArray() []byte {
+// Converts a BlockHeader into byte representation
+func (header BlockHeader) Bytes() []byte {
 	versionBytes := util.Uint16ToBytes(header.ProtocolVersion)
 
-	previousBlockHashBytes := header.PreviousBlockHash[:]
+	previousBlockHashBytes := header.PreviousBlockHash.Bytes()
 
-	allTransactionsHashBytes := header.AllTransactionsHash[:]
+	allTransactionsHashBytes := header.AllTransactionsHash.Bytes()
 
 	timeBytes, err := header.Timestamp.MarshalBinary()
 	if err != nil {
 		fmt.Printf("Error occurred creating byte array for transaction timestamp: %v\n", err)
 	}
 
-	targetBytes := header.Target[:]
+	targetBytes := header.Target.Bytes()
 
 	nonceBytes := util.Uint32ToBytes(header.Nonce)
 
@@ -95,10 +96,12 @@ func (header BlockHeader) BlockHeaderToByteArray() []byte {
 	return util.ConcatByteSlices(allBytes)
 }
 
-func (b Block) Hash() [crypto.HashLength]byte {
+// Returns the hash of a block, which is simply the hash of the block header
+func (b Block) Hash() common.Hash {
 	return b.Header.Hash()
 }
 
-func (header BlockHeader) Hash() [crypto.HashLength]byte {
-	return crypto.HashBytes(header.BlockHeaderToByteArray())
+// Returns the hash of a block header by hashing the byte representation of the header
+func (header BlockHeader) Hash() common.Hash {
+	return crypto.HashBytes(header.Bytes())
 }
