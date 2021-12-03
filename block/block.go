@@ -13,8 +13,8 @@ import (
 
 // A block is a collection of transactions with a header containing metadata
 type Block struct {
-	Header BlockHeader               `json:"header"`
-	Body   []transaction.Transaction `json:"body"`
+	Header *BlockHeader               `json:"header"`
+	Body   []*transaction.Transaction `json:"body"`
 }
 
 // A block header describes metatdata of a block, including a hash of its transactions,
@@ -33,7 +33,7 @@ type BlockHeader struct {
 func NewBlock(
 	previousBlockHash common.Hash,
 	currentBlockNumber int,
-	transactions []transaction.Transaction,
+	transactions []*transaction.Transaction,
 ) (blk *Block, ok bool) {
 	// Check number of transactions is under the limit
 	// TODO: Enforce limit based on byte size of block
@@ -60,7 +60,7 @@ func NewBlock(
 	}
 
 	block := Block{
-		Header: header,
+		Header: &header,
 		Body:   transactions,
 	}
 
@@ -69,7 +69,7 @@ func NewBlock(
 
 // Returns a pointer to hard coded genesis block
 func GetGenesisBlock() *Block {
-	block, _ := NewBlock(crypto.HashBytes([]byte("first")), 0, []transaction.Transaction{})
+	block, _ := NewBlock(crypto.HashBytes([]byte("first")), 0, []*transaction.Transaction{})
 
 	return block
 }
