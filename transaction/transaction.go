@@ -23,17 +23,17 @@ const (
 
 // A transaction is a collection of inputs and outputs that sends Testcoin between addresses
 type Transaction struct {
-	ProtocolVersion uint16              `json:"protocolVersion"`
-	Inputs          []TransactionInput  `json:"inputs"`
-	Outputs         []TransactionOutput `json:"outputs"`
-	Timestamp       time.Time           `json:"timestamp"`
+	ProtocolVersion uint16               `json:"protocolVersion"`
+	Inputs          []*TransactionInput  `json:"inputs"`
+	Outputs         []*TransactionOutput `json:"outputs"`
+	Timestamp       time.Time            `json:"timestamp"`
 }
 
 // A transaction input contains a pointer to a previous trasnaction output and a verification for proving ownership
 type TransactionInput struct {
-	OutputPointer      TransactionOutputPointer     `json:"outputPointer"`
-	VerificationLength uint16                       `json:"verificationLength"`
-	Verification       TransactionInputVerification `json:"verification"`
+	OutputPointer      *TransactionOutputPointer     `json:"outputPointer"`
+	VerificationLength uint16                        `json:"verificationLength"`
+	Verification       *TransactionInputVerification `json:"verification"`
 }
 
 // A transaction output pointer points to a previous transaction output
@@ -44,9 +44,9 @@ type TransactionOutputPointer struct {
 
 // A transaction input verification provides proof that a transaction input is owned by the sender
 type TransactionInputVerification struct {
-	SignatureLength  uint16                `json:"signatureLength"`
-	Signature        crypto.ECDSASignature `json:"signature"`
-	EncodedPublicKey []byte                `json:"encodedPublicKey"`
+	SignatureLength  uint16                 `json:"signatureLength"`
+	Signature        *crypto.ECDSASignature `json:"signature"`
+	EncodedPublicKey []byte                 `json:"encodedPublicKey"`
 }
 
 // A transaction output designates some amount of Testcoin to go to a receiver address
@@ -58,8 +58,8 @@ type TransactionOutput struct {
 // Generates a new transaction and returns a pointer to it
 // Also returns boolean indicating success
 func NewTransaction(
-	inputs []TransactionInput,
-	outputs []TransactionOutput,
+	inputs []*TransactionInput,
+	outputs []*TransactionOutput,
 ) (t *Transaction, ok bool) {
 
 	transaction := Transaction{
@@ -73,7 +73,7 @@ func NewTransaction(
 }
 
 // Takes a transaction and returns a byte array representing the transaction
-func (t Transaction) Bytes() []byte {
+func (t *Transaction) Bytes() []byte {
 	versionBytes := util.Uint16ToBytes(t.ProtocolVersion)
 
 	numInputBytes := util.Uint16ToBytes(uint16(len(t.Inputs)))
@@ -110,7 +110,7 @@ func (t Transaction) Bytes() []byte {
 
 // Convertes a byte array back into a Transaction
 // TODO: Error handling for out of bounds
-func BytesToTransaction(bytes []byte) Transaction {
+func BytesToTransaction(bytes []byte) *Transaction {
 	currentByte := 0
 
 	protocolVersion := util.BytesToUint16(bytes[currentByte : currentByte+protocol.ProtocolVersionLength])
@@ -119,7 +119,7 @@ func BytesToTransaction(bytes []byte) Transaction {
 	numInputs := int(util.BytesToUint16(bytes[currentByte : currentByte+NumInputOutputLength]))
 	currentByte += NumInputOutputLength
 
-	inputs := []TransactionInput{}
+	inputs := []*TransactionInput{}
 	for i := 0; i < numInputs; i += 1 {
 		verificationOffset := currentByte + TransactionOutputPointerLength
 		verificationLength := util.BytesToUint16(bytes[verificationOffset : verificationOffset+TransactionVerificationLengthLength])
@@ -133,7 +133,7 @@ func BytesToTransaction(bytes []byte) Transaction {
 	numOutputs := int(util.BytesToUint16(bytes[currentByte : currentByte+NumInputOutputLength]))
 	currentByte += NumInputOutputLength
 
-	outputs := []TransactionOutput{}
+	outputs := []*TransactionOutput{}
 	for i := 0; i < numOutputs; i += 1 {
 		output := BytesToTransactionOutput(bytes[currentByte : currentByte+TransactionOutputLength])
 		outputs = append(outputs, output)
@@ -143,7 +143,7 @@ func BytesToTransaction(bytes []byte) Transaction {
 	timestamp := new(time.Time)
 	timestamp.UnmarshalBinary(bytes[currentByte:])
 
-	return Transaction{
+	return &Transaction{
 		ProtocolVersion: protocolVersion,
 		Inputs:          inputs,
 		Outputs:         outputs,
@@ -152,7 +152,7 @@ func BytesToTransaction(bytes []byte) Transaction {
 }
 
 // Converts a TransactionInput into a byte array
-func (t TransactionInput) Bytes() []byte {
+func (t *TransactionInput) Bytes() []byte {
 	outputPointerBytes := t.OutputPointer.Bytes()
 
 	verificationLengthBytes := util.Uint16ToBytes(t.VerificationLength)
@@ -170,7 +170,7 @@ func (t TransactionInput) Bytes() []byte {
 
 // Coverts a byte array into a TransactionInput
 // TODO: Error handling for out of bounds
-func BytesToTransactionInput(bytes []byte) TransactionInput {
+func BytesToTransactionInput(bytes []byte) *TransactionInput {
 	currentByte := 0
 
 	outputPointerBytes := bytes[currentByte : currentByte+TransactionOutputPointerLength]
@@ -181,13 +181,9 @@ func BytesToTransactionInput(bytes []byte) TransactionInput {
 
 	verificationBytes := bytes[currentByte:]
 
-	var outputPointer TransactionOutputPointer
-	var verificationLength uint16
-	var verification TransactionInputVerification
-
-	outputPointer = BytesToTransactionOutputPointer(outputPointerBytes)
-	verificationLength = util.BytesToUint16(verificationLengthBytes)
-	verification = BytesToTransactionInputVerification(verificationBytes)
+	outputPointer := BytesToTransactionOutputPointer(outputPointerBytes)
+	verificationLength := util.BytesToUint16(verificationLengthBytes)
+	verification := BytesToTransactionInputVerification(verificationBytes)
 
 	input := TransactionInput{
 		OutputPointer:      outputPointer,
@@ -195,11 +191,11 @@ func BytesToTransactionInput(bytes []byte) TransactionInput {
 		Verification:       verification,
 	}
 
-	return input
+	return &input
 }
 
 // Converts a TransactionOutputPointer to bytes
-func (ptr TransactionOutputPointer) Bytes() []byte {
+func (ptr *TransactionOutputPointer) Bytes() []byte {
 	hashBytes := ptr.TransactionHash.Bytes()
 
 	indexBytes := util.Uint16ToBytes(ptr.OutputIndex)
@@ -214,7 +210,7 @@ func (ptr TransactionOutputPointer) Bytes() []byte {
 
 // Converts bytes back to a TransactionOutputPointer
 // TODO: Error handling for out of bounds
-func BytesToTransactionOutputPointer(bytes []byte) TransactionOutputPointer {
+func BytesToTransactionOutputPointer(bytes []byte) *TransactionOutputPointer {
 	hashBytes := bytes[:common.HashLength]
 	indexBytes := bytes[common.HashLength:]
 
@@ -226,11 +222,11 @@ func BytesToTransactionOutputPointer(bytes []byte) TransactionOutputPointer {
 		OutputIndex:     index,
 	}
 
-	return ptr
+	return &ptr
 }
 
 // Converts a TransactionInputVerification to bytes
-func (t TransactionInputVerification) Bytes() []byte {
+func (t *TransactionInputVerification) Bytes() []byte {
 	signatureBytes := t.Signature.Bytes()
 
 	publicKeyBytes := t.EncodedPublicKey
@@ -245,7 +241,7 @@ func (t TransactionInputVerification) Bytes() []byte {
 
 // Converts bytes to a TransactionInputVerification
 // TODO: Error handling for out of bounds
-func BytesToTransactionInputVerification(bytes []byte) TransactionInputVerification {
+func BytesToTransactionInputVerification(bytes []byte) *TransactionInputVerification {
 	currentByte := 0
 	signatureLengthBytes := bytes[currentByte : currentByte+TransactionSignatureLengthLength]
 	signatureLength := int(util.BytesToUint16(signatureLengthBytes))
@@ -257,16 +253,16 @@ func BytesToTransactionInputVerification(bytes []byte) TransactionInputVerificat
 
 	publicKey := bytes[currentByte:]
 
-	output := TransactionInputVerification{
+	verification := TransactionInputVerification{
 		Signature:        signature,
 		EncodedPublicKey: publicKey,
 	}
 
-	return output
+	return &verification
 }
 
 // Converts a TransactionOutput to bytes
-func (t TransactionOutput) Bytes() []byte {
+func (t *TransactionOutput) Bytes() []byte {
 	addressBytes := t.ReceiverAddress.Bytes()
 
 	amountBytes := util.Uint64ToBytes(t.Amount)
@@ -281,7 +277,7 @@ func (t TransactionOutput) Bytes() []byte {
 
 // Converts a byte array into a TransactionOutput
 // TODO: Error handling for out of bounds
-func BytesToTransactionOutput(bytes []byte) TransactionOutput {
+func BytesToTransactionOutput(bytes []byte) *TransactionOutput {
 	addressBytes := bytes[:common.AddressLength]
 	amountBytes := bytes[common.AddressLength:]
 
@@ -293,7 +289,7 @@ func BytesToTransactionOutput(bytes []byte) TransactionOutput {
 		Amount:          amount,
 	}
 
-	return output
+	return &output
 }
 
 // Hashes a transaction

@@ -15,13 +15,13 @@ type ECDSASignature struct {
 
 // Converts a byte array into a ECDSASignature
 // TODO: Find a better way to convert this that places the conversion info inside the struct
-func BytesToECDSASignature(bytes []byte) ECDSASignature {
+func BytesToECDSASignature(bytes []byte) *ECDSASignature {
 	rBytes := bytes[:len(bytes)/2]
 	sBytes := bytes[len(bytes)/2:]
 	rptr := new(big.Int).SetBytes(rBytes)
 	sptr := new(big.Int).SetBytes(sBytes)
 
-	return ECDSASignature{
+	return &ECDSASignature{
 		r: *rptr,
 		s: *sptr,
 	}
