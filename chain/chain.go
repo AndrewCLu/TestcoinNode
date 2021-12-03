@@ -16,6 +16,7 @@ var lastBlockHash common.Hash                                                 //
 var pendingTransactions []*transaction.Transaction                            // All transactions that have not been processed yet
 var unspentOutputs map[common.Address][]*transaction.TransactionOutputPointer // All utxos
 
+// Sets up the initial state of the chain
 func InitializeChain() {
 	// Set up the genesis block
 	genesisBlock := block.GetGenesisBlock()
@@ -29,14 +30,16 @@ func InitializeChain() {
 	unspentOutputs = make(map[common.Address][]*transaction.TransactionOutputPointer)
 }
 
-// Gets a recorded transaction
-func GetTransaction(hash common.Hash) (tx transaction.Transaction, ok bool) {
+// Given a transaction hash, returns a pointer to the transaction
+// Returns bool indicating success
+func GetTransaction(hash common.Hash) (tx *transaction.Transaction, ok bool) {
 	return transactions[hash], true
 }
 
-// Gets num pending transactions
+// Gets up to num pending transactions
+// Returns bool indicating success
 // TODO: Have a ranking of pending transactions to retrieve by time added or miner fee
-func GetPendingTransactions(num int) (txs []transaction.Transaction, ok bool) {
+func GetPendingTransactions(num int) (txs []*transaction.Transaction, ok bool) {
 	if num > len(pendingTransactions) {
 		return pendingTransactions, true
 	}
@@ -45,24 +48,28 @@ func GetPendingTransactions(num int) (txs []transaction.Transaction, ok bool) {
 }
 
 // Add a pending transaction to the list
-func AddPendingTransaction(tx transaction.Transaction) (ok bool) {
+// Returns bool indicating success
+func AddPendingTransaction(tx *transaction.Transaction) (ok bool) {
 	pendingTransactions = append(pendingTransactions, tx)
 
 	return true
 }
 
 // Get information about the last block in the chain
+// Gets the hash and block number of the last blcok
+// Returns bool indicating success
 func GetLastBlockInfo() (hash common.Hash, blockNum int, ok bool) {
 	return lastBlockHash, len(blocks) - 1, true
 }
 
-// Adds a transaction to the chain
+// Adds a confirmed transaction to the chain
+// Returns bool indicating success
 // TODO: Make this atomic - either it updates entire state if success or not at all
-func AddTransaction(tx transaction.Transaction) (ok bool) {
+func AddTransaction(tx *transaction.Transaction) (ok bool) {
 	// Find matching pending transaction
 	ind := -1
 	for i, ptx := range pendingTransactions {
-		if tx.Equal(ptx) {
+		if tx.Equal(*ptx) {
 			ind = i
 		}
 	}
@@ -89,7 +96,7 @@ func AddTransaction(tx transaction.Transaction) (ok bool) {
 		// Find matching utxo
 		utxoInd := -1
 		for j, utxoPtr := range unspentOutputs[address] {
-			if ptr.Equal(utxoPtr) {
+			if ptr.Equal(*utxoPtr) {
 				utxoInd = j
 			}
 		}
@@ -111,22 +118,17 @@ func AddTransaction(tx transaction.Transaction) (ok bool) {
 			OutputIndex:     uint16(outputIndex),
 		}
 		receiverAddress := output.ReceiverAddress
-		unspentOutputs[receiverAddress] = append(unspentOutputs[receiverAddress], outputPointer)
+		unspentOutputs[receiverAddress] = append(unspentOutputs[receiverAddress], &outputPointer)
 	}
 
 	return true
 }
 
 // Add a block to the chain
-// TODO: Make this atomic - either it updates entire state if success or not at all
 // Assumes that block has been validated by node
-func AddBlock(block block.Block) (success bool) {
-	// Add block to blocks
-	// Update block hash
-	// Process all transactions
-	// Update pending transactions
-	// Process all new and deleted utxos
-
+// Returns bool indicating success
+// TODO: Make this atomic - either it updates entire state if success or not at all
+func AddBlock(block *block.Block) (ok bool) {
 	for _, tx := range block.Body {
 		success := AddTransaction(tx)
 		// Make sure transactions were successfully added
@@ -146,12 +148,14 @@ func AddBlock(block block.Block) (success bool) {
 }
 
 // Get all unspent output pointers for a given address
-func GetUnspentTransactions(address common.Address) (outputPointers []transaction.TransactionOutputPointer, ok bool) {
+// Returns bool indicating success
+func GetUnspentTransactions(address common.Address) (outputPointers []*transaction.TransactionOutputPointer, ok bool) {
 	return unspentOutputs[address], true
 }
 
 // Get the output amount corresponding to a specific output pointer
-func GetOutputAmount(ptr transaction.TransactionOutputPointer) (amount uint64, success bool) {
+// Returns bool indicating success
+func GetOutputAmount(ptr *transaction.TransactionOutputPointer) (amount uint64, success bool) {
 	hash := ptr.TransactionHash
 	index := ptr.OutputIndex
 
@@ -173,25 +177,26 @@ func GetAccountValue(address common.Address) uint64 {
 	return total
 }
 
+// Prints the current state of the blockchain
 func PrintChainState() {
 	fmt.Printf("Blocks mined...\n")
 	for _, block := range blocks {
-		fmt.Printf("Block: %v\n", util.HashToHexString(block.Hash()))
+		fmt.Printf("Block: %v\n", block.Hash().Hex())
 	}
 
 	fmt.Printf("Transactions confirmed...\n")
 	for _, tx := range transactions {
-		fmt.Printf("Transaction: %v\n", util.HashToHexString(tx.Hash()))
+		fmt.Printf("Transaction: %v\n", tx.Hash().Hex())
 	}
 
 	fmt.Printf("Unspent transactions...\n")
 	for address, outputList := range unspentOutputs {
 		amount := util.Uint64UnitToFloat64Unit(GetAccountValue(address))
-		fmt.Printf("Account %v has value %v\n", util.HashToHexString(address), amount)
+		fmt.Printf("Account %v has value %v\n", address.Hex(), amount)
 		for _, output := range outputList {
 			fmt.Printf("Account %v has unspent output at transaction %v index %v\n",
-				util.HashToHexString(address),
-				util.HashToHexString(output.TransactionHash),
+				address.Hex(),
+				output.TransactionHash.Hex(),
 				output.OutputIndex,
 			)
 		}
