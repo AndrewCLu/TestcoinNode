@@ -69,7 +69,7 @@ func AddTransaction(tx *transaction.Transaction) (ok bool) {
 	// Find matching pending transaction
 	ind := -1
 	for i, ptx := range pendingTransactions {
-		if tx.Equal(*ptx) {
+		if tx.Equal(ptx) {
 			ind = i
 		}
 	}
@@ -96,7 +96,7 @@ func AddTransaction(tx *transaction.Transaction) (ok bool) {
 		// Find matching utxo
 		utxoInd := -1
 		for j, utxoPtr := range unspentOutputs[address] {
-			if ptr.Equal(*utxoPtr) {
+			if ptr.Equal(utxoPtr) {
 				utxoInd = j
 			}
 		}
