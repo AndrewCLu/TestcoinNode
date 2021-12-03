@@ -14,8 +14,8 @@ func TestTransactionToByteArray(t *testing.T) {
 
 	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
 	transaction, success := NewTransaction(
-		[]TransactionInput{},
-		[]TransactionOutput{output},
+		[]*TransactionInput{},
+		[]*TransactionOutput{&output},
 	)
 
 	if !success {

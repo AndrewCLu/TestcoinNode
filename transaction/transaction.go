@@ -293,12 +293,12 @@ func BytesToTransactionOutput(bytes []byte) *TransactionOutput {
 }
 
 // Hashes a transaction
-func (t Transaction) Hash() common.Hash {
+func (t *Transaction) Hash() common.Hash {
 	return crypto.HashBytes(t.Bytes())
 }
 
 // Checks if two transactions are equal
-func (ta Transaction) Equal(tb Transaction) bool {
+func (ta *Transaction) Equal(tb *Transaction) bool {
 	hasha := ta.Hash()
 	hashb := tb.Hash()
 
@@ -306,6 +306,6 @@ func (ta Transaction) Equal(tb Transaction) bool {
 }
 
 // Checks if two unspent transaction outputs are equal
-func (ptra TransactionOutputPointer) Equal(ptrb TransactionOutputPointer) bool {
+func (ptra *TransactionOutputPointer) Equal(ptrb *TransactionOutputPointer) bool {
 	return ptra.TransactionHash.Equal(ptrb.TransactionHash) && ptra.OutputIndex == ptrb.OutputIndex
 }
