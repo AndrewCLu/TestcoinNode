@@ -12,7 +12,7 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
 
-const DefaultHashLimit := 10 * 1000 * 1000 // The maximum number of hashes a miner will attempt to solve a block
+const DefaultHashLimit = 10 * 1000 * 1000 // The maximum number of hashes a miner will attempt to solve a block
 
 // The configuration for a miner
 type MinerConfig struct {
@@ -28,17 +28,17 @@ type Miner struct {
 // Creates and returns the address of a new Miner
 // Returns a bool indicating success
 // TODO: Enable users to set up miners with non-default values
-func NewMiner(coinbase common.Address) *Miner, bool {
+func NewMiner(coinbase common.Address) (*Miner, bool) {
 	defaultConfig := MinerConfig{
 		HashLimit: DefaultHashLimit,
 	}
 
 	miner := Miner{
 		Coinbase: coinbase,
-		Config: defaultConfig,
+		Config:   &defaultConfig,
 	}
 
-	return *miner, true
+	return &miner, true
 }
 
 // Tries to mine a block from pending transactions on the chain
@@ -78,25 +78,25 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 		fmt.Printf("Block %v confirmed transaction %v\n", blockHash.Hex(), tx.Hash().Hex())
 	}
 
-	return *block
+	return block, true
 }
 
 // Given a block header, compute the nonce that results in a hash under the desired target
 // Does not modify the block header passed in
 // TOOD: Make sure Solve does not modify the original header
-func (miner *Miner) solve(header block.BlockHeader) (nonce uint32, ok bool) {
+func (miner *Miner) solve(header *block.BlockHeader) (nonce uint32, ok bool) {
 	// Start the nonce at a random number to avoid multiple nodes mining the same nonces
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)
 	nonce = r.Uint32()
 
 	// Represent target as a full hash to compare block hash to
-	target := protocol.GetFullTargetFromHeader(header.Target)
+	target := header.Target.FullHash()
 
 	t1 := time.Now()
 	fmt.Printf("Solving block with target %v ...\n", target.Hex())
 
-	for count = 0; count < miner.Config.HashLimit; count++ {
+	for count := 0; count < miner.Config.HashLimit; count++ {
 		count += 1
 		header.Nonce = nonce
 		hash := header.Hash()
@@ -107,7 +107,7 @@ func (miner *Miner) solve(header block.BlockHeader) (nonce uint32, ok bool) {
 
 			fmt.Printf("Successfully found nonce %v with %v tries in time %v, yielding hash %v\n", nonce, count, diff, hash.Hex())
 			ok = true
-			return 
+			return
 		}
 
 		nonce += 1
@@ -115,5 +115,5 @@ func (miner *Miner) solve(header block.BlockHeader) (nonce uint32, ok bool) {
 
 	// Failed to find an appropriate nonce
 	ok = false
-	return 
+	return
 }
