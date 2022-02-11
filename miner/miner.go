@@ -23,12 +23,13 @@ type MinerConfig struct {
 type Miner struct {
 	Coinbase common.Address
 	Config   *MinerConfig
+	Chain    *chain.Chain
 }
 
 // Creates and returns the address of a new Miner
 // Returns a bool indicating success
 // TODO: Enable users to set up miners with non-default values
-func NewMiner(coinbase common.Address) (*Miner, bool) {
+func New(coinbase common.Address, chain *chain.Chain) (*Miner, bool) {
 	defaultConfig := MinerConfig{
 		HashLimit: DefaultHashLimit,
 	}
@@ -36,6 +37,7 @@ func NewMiner(coinbase common.Address) (*Miner, bool) {
 	miner := Miner{
 		Coinbase: coinbase,
 		Config:   &defaultConfig,
+		Chain:    chain,
 	}
 
 	return &miner, true
@@ -46,20 +48,20 @@ func NewMiner(coinbase common.Address) (*Miner, bool) {
 // TODO: Have better selection criteria for transactions
 // TOOD: Add a coinbase transaction for the miner
 func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
-	txs, txOk := chain.GetPendingTransactions(protocol.MaxTransactionsInBlock)
+	txs, txOk := miner.Chain.GetPendingTransactions(protocol.MaxTransactionsInBlock)
 	if !txOk {
 		fmt.Println("Could not get transactions from the current chain")
 		return nil, false
 	}
 
-	lastBlockHash, lastBlockNum, lastBlockOk := chain.GetLastBlockInfo()
+	lastBlockHash, lastBlockNum, lastBlockOk := miner.Chain.GetLastBlockInfo()
 	if !lastBlockOk {
 		fmt.Println("Could not get last block from current chain")
 		return nil, false
 	}
 	blockNum := lastBlockNum + 1
 
-	block, blockOk := block.NewBlock(lastBlockHash, blockNum, txs)
+	block, blockOk := block.New(lastBlockHash, blockNum, txs)
 	if !blockOk {
 		fmt.Println("Failed to create new block")
 		return nil, false

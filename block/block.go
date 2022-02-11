@@ -30,7 +30,7 @@ type BlockHeader struct {
 
 // Generates a new block given the state of the previous blocks and a list of transactions
 // Returns a pointer to the block if valid block can be generated
-func NewBlock(
+func New(
 	previousBlockHash common.Hash,
 	currentBlockNumber int,
 	transactions []*transaction.Transaction,
@@ -69,7 +69,7 @@ func NewBlock(
 
 // Returns a pointer to hard coded genesis block
 func GetGenesisBlock() *Block {
-	block, _ := NewBlock(crypto.HashBytes([]byte("first")), 0, []*transaction.Transaction{})
+	block, _ := New(crypto.HashBytes([]byte("first")), 0, []*transaction.Transaction{})
 
 	return block
 }

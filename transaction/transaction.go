@@ -57,7 +57,7 @@ type TransactionOutput struct {
 
 // Generates a new transaction and returns a pointer to it
 // Also returns boolean indicating success
-func NewTransaction(
+func New(
 	inputs []*TransactionInput,
 	outputs []*TransactionOutput,
 ) (t *Transaction, ok bool) {
