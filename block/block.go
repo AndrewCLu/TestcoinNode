@@ -75,7 +75,7 @@ func GetGenesisBlock() *Block {
 }
 
 // Converts a BlockHeader into byte representation
-func (header BlockHeader) Bytes() []byte {
+func (header *BlockHeader) Bytes() []byte {
 	versionBytes := util.Uint16ToBytes(header.ProtocolVersion)
 
 	previousBlockHashBytes := header.PreviousBlockHash.Bytes()
@@ -104,11 +104,11 @@ func (header BlockHeader) Bytes() []byte {
 }
 
 // Returns the hash of a block, which is simply the hash of the block header
-func (b Block) Hash() common.Hash {
+func (b *Block) Hash() common.Hash {
 	return b.Header.Hash()
 }
 
 // Returns the hash of a block header by hashing the byte representation of the header
-func (header BlockHeader) Hash() common.Hash {
+func (header *BlockHeader) Hash() common.Hash {
 	return crypto.HashBytes(header.Bytes())
 }
