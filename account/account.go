@@ -16,7 +16,7 @@ type Account struct {
 
 // Generates a new account with a new pair of public and private keys
 // Returns a boolean indicating success
-func NewAccount() (*Account, bool) {
+func New() (*Account, bool) {
 	encodedPublicKey, encodedPrivateKey, err := crypto.NewDigitalSignatureKeys()
 	if err != nil {
 		fmt.Println(err)

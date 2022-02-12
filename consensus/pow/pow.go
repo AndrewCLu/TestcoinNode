@@ -1,4 +1,4 @@
-package consensus
+package pow
 
 import (
 	"bytes"
@@ -12,10 +12,20 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
+// Pow is a consensus mechanism based on proof-of-work
+type Pow struct {
+}
+
+func New() (p *Pow, ok bool) {
+	pow := Pow{}
+
+	return &pow, true
+}
+
 // Returns if a transaction is valid or not based on the state of the ledger
 // TODO: Check that pointers aren't reused as different inputs in the same tx
 // TODO: Safety checks
-func ValidateTransaction(chain *chain.Chain, tx *transaction.Transaction) bool {
+func (pow *Pow) ValidateTransaction(chain *chain.Chain, tx *transaction.Transaction) bool {
 	var inputTotal uint64 = 0
 	for _, input := range tx.Inputs {
 		ptr := input.OutputPointer
@@ -25,7 +35,7 @@ func ValidateTransaction(chain *chain.Chain, tx *transaction.Transaction) bool {
 		senderAddress := account.GetAddressFromPublicKey(senderPublicKey)
 
 		// Verify that the input is actually signed by the utxo possessor
-		if !VerifyInput(senderPublicKey, ptr, signature) {
+		if !pow.VerifyInput(senderPublicKey, ptr, signature) {
 			return false
 		}
 
@@ -64,7 +74,7 @@ func ValidateTransaction(chain *chain.Chain, tx *transaction.Transaction) bool {
 
 // Returns if a block is valid or not given the state of the ledger
 // TODO: Make sure input validation is done dynamically - each transaction should update the utxo state
-func ValidateBlock(chain *chain.Chain, block *block.Block) bool {
+func (pow *Pow) ValidateBlock(chain *chain.Chain, block *block.Block) bool {
 	header := block.Header
 	transactions := block.Body
 	prevHash, prevBlockNum, success := chain.GetLastBlockInfo()
@@ -82,7 +92,7 @@ func ValidateBlock(chain *chain.Chain, block *block.Block) bool {
 	for i, tx := range transactions {
 		// Check that each transaction is valid
 		// TODO: UPDATE STATE IN BETWEEN CHECKING IF TRANSACTIONS ARE VALID
-		if !ValidateTransaction(chain, tx) {
+		if !pow.ValidateTransaction(chain, tx) {
 			return false
 		}
 
@@ -114,7 +124,7 @@ func ValidateBlock(chain *chain.Chain, block *block.Block) bool {
 
 // Signs a transaction input
 // TODO: Should return a transaction input verification
-func SignInput(privateKey []byte,
+func (pow *Pow) SignInput(privateKey []byte,
 	outputPointer *transaction.TransactionOutputPointer,
 ) (signature *crypto.ECDSASignature) {
 	hash := outputPointer.TransactionHash
@@ -129,7 +139,7 @@ func SignInput(privateKey []byte,
 
 // Verifies the signature of a transaction input
 // TODO: Should accept a transaction input verification
-func VerifyInput(publicKey []byte,
+func (pow *Pow) VerifyInput(publicKey []byte,
 	outputPointer *transaction.TransactionOutputPointer,
 	signature *crypto.ECDSASignature,
 ) (verified bool) {

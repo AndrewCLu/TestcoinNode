@@ -13,7 +13,7 @@ func TestTransactionToByteArray(t *testing.T) {
 	amount := util.Float64UnitToUnit64Unit(69.69)
 
 	output := TransactionOutput{ReceiverAddress: address, Amount: amount}
-	transaction, success := NewTransaction(
+	transaction, success := New(
 		[]*TransactionInput{},
 		[]*TransactionOutput{&output},
 	)

@@ -25,13 +25,13 @@ type Miner struct {
 	Coinbase  common.Address
 	Config    *MinerConfig
 	Chain     *chain.Chain
-	Consensus *consensus.Consensus
+	Consensus consensus.Consensus
 }
 
 // Creates and returns the address of a new Miner
 // Returns a bool indicating success
 // TODO: Enable users to set up miners with non-default values
-func New(coinbase common.Address, chain *chain.Chain, consensus *consensus.Consensus) (*Miner, bool) {
+func New(coinbase common.Address, chain *chain.Chain, consensus consensus.Consensus) (*Miner, bool) {
 	defaultConfig := MinerConfig{
 		HashLimit: DefaultHashLimit,
 	}

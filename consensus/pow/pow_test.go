@@ -1,4 +1,4 @@
-package consensus
+package pow
 
 import (
 	"testing"
@@ -9,27 +9,28 @@ import (
 )
 
 func TestSignVerifyTransactionInput(t *testing.T) {
+	pow, _ := New()
 
-	act := account.NewAccount()
+	act, _ := account.New()
 	amount := util.Float64UnitToUnit64Unit(10.0)
 
-	output := transaction.TransactionOutput{ReceiverAddress: act.GetAddress(), Amount: amount}
-	tx, success := transaction.NewTransaction(
-		[]transaction.TransactionInput{},
-		[]transaction.TransactionOutput{output},
+	output := &transaction.TransactionOutput{ReceiverAddress: act.Address, Amount: amount}
+	tx, success := transaction.New(
+		[]*transaction.TransactionInput{},
+		[]*transaction.TransactionOutput{output},
 	)
 
 	if !success {
 		t.Fatalf(`Tried to make a new transaction but failed.`)
 	}
 
-	outputPointer := transaction.TransactionOutputPointer{
+	outputPointer := &transaction.TransactionOutputPointer{
 		TransactionHash: tx.Hash(),
 		OutputIndex:     uint16(0),
 	}
 
-	signature := SignInput(act.GetPrivateKey(), outputPointer)
-	verified := VerifyInput(act.GetPublicKey(), outputPointer, signature)
+	signature := pow.SignInput(act.PrivateKey, outputPointer)
+	verified := pow.VerifyInput(act.PublicKey, outputPointer, signature)
 
 	if !verified {
 		t.Fatalf(`Failed to verify the signature of a new coinbase transaction.`)
