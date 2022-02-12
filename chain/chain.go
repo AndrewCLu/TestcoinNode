@@ -9,13 +9,6 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-var blocks map[common.Hash]*block.Block                   // Stores all previous blocks
-var transactions map[common.Hash]*transaction.Transaction // Stores all previous transactions
-
-var lastBlockHash common.Hash                                                 // Last block hash
-var pendingTransactions []*transaction.Transaction                            // All transactions that have not been processed yet
-var unspentOutputs map[common.Address][]*transaction.TransactionOutputPointer // All utxos
-
 type Chain struct {
 	Blocks              map[common.Hash]*block.Block
 	Transactions        map[common.Hash]*transaction.Transaction
@@ -29,7 +22,7 @@ func New() (chn *Chain, ok bool) {
 	// Set up the genesis block
 	genesisBlock := block.GetGenesisBlock()
 	genesisBlockHash := genesisBlock.Hash()
-	blocks = make(map[common.Hash]*block.Block)
+	blocks := make(map[common.Hash]*block.Block)
 	blocks[genesisBlockHash] = genesisBlock
 
 	chain := Chain{

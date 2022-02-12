@@ -12,31 +12,42 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-func InitializeNode() {
-	chain.InitializeChain()
+type Node struct {
+	Chain *chain.Chain
+	Consensus *consensus.Consensus
+	Miner *miner.Miner
+}
+
+func New(n *Node, ok bool) {
+	node := Node{
+		Chain: chain.New()
+		Consensus: consensus.New()
+	}
+
+	return &node, true
 }
 
 // Returns a new account
-func NewAccount() account.Account {
+// TODO: Key management for accounts
+func (node *Node) NewAccount() account.Account {
 	account := account.NewAccount()
-
 	fmt.Printf("Created account with address: %v\n", util.AddressToHexString(account.GetAddress()))
 
 	return account
 }
 
 // Creates a new coinbase transaction for a given account
-func NewCoinbaseTransaction(account account.Account, readableAmount float64) transaction.Transaction {
+func (node *Node) NewCoinbaseTransaction(account account.Account, readableAmount float64) *transaction.Transaction {
 	address := account.GetAddress()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 
 	output := transaction.TransactionOutput{ReceiverAddress: address, Amount: amount}
-	newTransaction, success := transaction.NewTransaction(
+	newTransaction, success := transaction.New(
 		[]transaction.TransactionInput{},
 		[]transaction.TransactionOutput{output},
 	)
 
-	if !success || !consensus.ValidateTransaction(newTransaction) {
+	if !success || !node.Consensus.ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new coinbase transaction and FAILED")
 		return transaction.Transaction{}
 	}
@@ -46,31 +57,31 @@ func NewCoinbaseTransaction(account account.Account, readableAmount float64) tra
 		readableAmount,
 		util.HashToHexString(address),
 	)
-	chain.AddPendingTransaction(newTransaction)
+	node.Chain.AddPendingTransaction(newTransaction)
 	return newTransaction
 }
 
 // Creates a new peer transaction for a given amount
-func NewPeerTransaction(account account.Account, receiverAddress [protocol.AddressLength]byte, readableAmount float64) transaction.Transaction {
+func (node *Node) NewPeerTransaction(account account.Account, receiverAddress [protocol.AddressLength]byte, readableAmount float64) *transaction.Transaction {
 	senderAddress := account.GetAddress()
 	senderPublicKey := account.GetPublicKey()
 	senderPrivateKey := account.GetPrivateKey()
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 
 	// Check that sender has enough money
-	senderValue := chain.GetAccountValue(senderAddress)
+	senderValue := node.Chain.GetAccountValue(senderAddress)
 	if senderValue < amount {
 		fmt.Printf("Attempted to create new peer transaction but sender has insufficient funds.")
 		return transaction.Transaction{}
 	}
 
-	outputPointers, _ := chain.GetUnspentTransactions(senderAddress)
+	outputPointers, _ := node.Chain.GetUnspentTransactions(senderAddress)
 
 	// Current implementation just uses all utxos in a transaction
 	// TODO: Pick the minimum number of utxos an account can use to complete a transaction
 	inputs := []transaction.TransactionInput{}
 	for _, ptr := range outputPointers {
-		signature := consensus.SignInput(senderPrivateKey, ptr)
+		signature := node.Consensus.SignInput(senderPrivateKey, ptr)
 
 		verification := transaction.TransactionInputVerification{
 			Signature:        signature,
@@ -105,7 +116,7 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 
 	newTransaction, success := transaction.NewTransaction(inputs, outputs)
 
-	if !success || !consensus.ValidateTransaction(newTransaction) {
+	if !success || !node.Consensus.ValidateTransaction(newTransaction) {
 		fmt.Printf("Attempted to create new peer transaction and FAILED")
 		return transaction.Transaction{}
 	}
@@ -116,25 +127,31 @@ func NewPeerTransaction(account account.Account, receiverAddress [protocol.Addre
 		util.HashToHexString(senderAddress),
 		util.HashToHexString(receiverAddress),
 	)
-	chain.AddPendingTransaction(newTransaction)
+	node.Chain.AddPendingTransaction(newTransaction)
 	return newTransaction
 }
 
+// Initializes the miner with specified coinbase address
+func (node *Node) BeginMiner(coinbase common.Address) {
+	node.Miner = miner.New(coinbase, node.Chain, node.Consensus)
+}
+
 // Calls the miner to mine a block and adds it to the chain if it is valid
-func MineBlock() {
+func (node *Node) MineBlock() {
+	if !node.Miner { return }
 	block := miner.MineBlock()
-	valid := consensus.ValidateBlock(block)
+	valid := node.Consensus.ValidateBlock(block)
 
 	if valid {
-		chain.AddBlock(block)
+		node.Chain.AddBlock(block)
 	}
 }
 
 // Gets the human readable value of an account
-func GetReadableAccountValue(account account.Account) float64 {
+func (node *Node) GetReadableAccountValue(account account.Account) float64 {
 	address := account.GetAddress()
 
-	total := chain.GetAccountValue(address)
+	total := node.Chain.GetAccountValue(address)
 	readableTotal := util.Uint64UnitToFloat64Unit(total)
 
 	fmt.Printf("Account with address %v has value %v\n", util.AddressToHexString(address), readableTotal)
@@ -143,6 +160,6 @@ func GetReadableAccountValue(account account.Account) float64 {
 }
 
 // Testing function to print the state of the chain
-func PrintChainState() {
-	chain.PrintChainState()
+func (node *Node) PrintChainState() {
+	node.Chain.PrintChainState()
 }
