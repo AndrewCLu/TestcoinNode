@@ -9,6 +9,7 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
 	"github.com/AndrewCLu/TestcoinNode/common"
+	"github.com/AndrewCLu/TestcoinNode/consensus"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 )
 
@@ -21,23 +22,25 @@ type MinerConfig struct {
 
 // Creates blocks and solves proof of work
 type Miner struct {
-	Coinbase common.Address
-	Config   *MinerConfig
-	Chain    *chain.Chain
+	Coinbase  common.Address
+	Config    *MinerConfig
+	Chain     *chain.Chain
+	Consensus *consensus.Consensus
 }
 
 // Creates and returns the address of a new Miner
 // Returns a bool indicating success
 // TODO: Enable users to set up miners with non-default values
-func New(coinbase common.Address, chain *chain.Chain) (*Miner, bool) {
+func New(coinbase common.Address, chain *chain.Chain, consensus *consensus.Consensus) (*Miner, bool) {
 	defaultConfig := MinerConfig{
 		HashLimit: DefaultHashLimit,
 	}
 
 	miner := Miner{
-		Coinbase: coinbase,
-		Config:   &defaultConfig,
-		Chain:    chain,
+		Coinbase:  coinbase,
+		Config:    &defaultConfig,
+		Chain:     chain,
+		Consensus: consensus,
 	}
 
 	return &miner, true
