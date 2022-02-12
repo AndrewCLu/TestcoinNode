@@ -64,7 +64,10 @@ import "github.com/AndrewCLu/TestcoinNode/node"
 // }
 
 func main() {
-	node.InitializeNode()
+	node, _ := node.New()
+
+	coinbase := node.NewAccount()
+	node.BeginMiner(coinbase.Address)
 
 	bob := node.NewAccount()
 	alice := node.NewAccount()
@@ -77,13 +80,13 @@ func main() {
 	node.NewCoinbaseTransaction(bob, 10)
 	node.MineBlock()
 
-	node.NewPeerTransaction(bob, alice.GetAddress(), 69)
+	node.NewPeerTransaction(bob, alice.Address, 69)
 	node.MineBlock()
 
 	node.GetReadableAccountValue(bob)
 	node.GetReadableAccountValue(alice)
 
-	node.NewPeerTransaction(alice, bob.GetAddress(), 6)
+	node.NewPeerTransaction(alice, bob.Address, 6)
 	node.MineBlock()
 
 	node.GetReadableAccountValue(bob)

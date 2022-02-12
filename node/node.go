@@ -40,7 +40,7 @@ func (node *Node) NewAccount() *account.Account {
 }
 
 // Creates a new coinbase transaction for a given account
-func (node *Node) NewCoinbaseTransaction(account account.Account, readableAmount float64) *transaction.Transaction {
+func (node *Node) NewCoinbaseTransaction(account *account.Account, readableAmount float64) *transaction.Transaction {
 	address := account.Address
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
 
@@ -65,7 +65,7 @@ func (node *Node) NewCoinbaseTransaction(account account.Account, readableAmount
 }
 
 // Creates a new peer transaction for a given amount
-func (node *Node) NewPeerTransaction(account account.Account, receiverAddress common.Address, readableAmount float64) *transaction.Transaction {
+func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress common.Address, readableAmount float64) *transaction.Transaction {
 	senderAddress := account.Address
 	senderPublicKey := account.PublicKey
 	senderPrivateKey := account.PrivateKey
@@ -141,7 +141,7 @@ func (node *Node) BeginMiner(coinbase common.Address) {
 
 // Calls the miner to mine a block and adds it to the chain if it is valid
 func (node *Node) MineBlock() {
-	if node.Miner != nil {
+	if node.Miner == nil {
 		return
 	}
 	block, _ := node.Miner.MineBlock()
@@ -153,7 +153,7 @@ func (node *Node) MineBlock() {
 }
 
 // Gets the human readable value of an account
-func (node *Node) GetReadableAccountValue(account account.Account) float64 {
+func (node *Node) GetReadableAccountValue(account *account.Account) float64 {
 	address := account.Address
 
 	total := node.Chain.GetAccountValue(address)
