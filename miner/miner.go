@@ -101,6 +101,7 @@ func (miner *Miner) solve(header *block.BlockHeader) (nonce uint32, ok bool) {
 	t1 := time.Now()
 	fmt.Printf("Solving block with target %v ...\n", target.Hex())
 
+	// TODO: Check valid header using consensus
 	for count := 0; count < miner.Config.HashLimit; count++ {
 		count += 1
 		header.Nonce = nonce
