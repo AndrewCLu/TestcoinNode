@@ -19,21 +19,24 @@ type Chain struct {
 
 // Sets up the initial state of the chain
 func New() (chn *Chain, ok bool) {
-	// Set up the genesis block
-	genesisBlock := block.GetGenesisBlock()
-	genesisBlockHash := genesisBlock.Hash()
-	blocks := make(map[common.Hash]*block.Block)
-	blocks[genesisBlockHash] = genesisBlock
-
 	chain := Chain{
-		Blocks:              blocks,
+		Blocks:              make(map[common.Hash]*block.Block),
 		Transactions:        make(map[common.Hash]*transaction.Transaction),
-		LastBlockHash:       genesisBlockHash,
+		LastBlockHash:       *new(common.Hash),
 		PendingTransactions: []*transaction.Transaction{},
 		UnspentOutputs:      make(map[common.Address][]*transaction.TransactionOutputPointer),
 	}
 
 	return &chain, true
+}
+
+// Initializes the chain with a genesis block, return a bool indicating success
+func (chain *Chain) Initialize(genesisBlock *block.Block) bool {
+	genesisBlockHash := genesisBlock.Hash()
+	chain.Blocks[genesisBlockHash] = genesisBlock
+	chain.LastBlockHash = genesisBlockHash
+
+	return true
 }
 
 // Given a transaction hash, returns a pointer to the transaction

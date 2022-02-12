@@ -2,6 +2,7 @@ package pow
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/block"
@@ -71,6 +72,32 @@ func (pow *Pow) ValidateTransaction(chain *chain.Chain, tx *transaction.Transact
 	return true
 }
 
+// Returns boolean indicating if a coinbase transaction is valid or not based onn the state of the ledger
+func (pow *Pow) ValidateCoinbaseTransaction(chain *chain.Chain, coinbase *transaction.Transaction) bool {
+	if len(coinbase.Inputs) > 0 {
+		fmt.Println("Coinbase transaction cannot have any inputs")
+		return false
+	}
+
+	if len(coinbase.Outputs) != 1 {
+		fmt.Println("Coinbase transaction can only have one output")
+	}
+
+	_, lastBlockNum, lastBlockOk := chain.GetLastBlockInfo()
+	if !lastBlockOk {
+		fmt.Println("Could not get last block from current chain")
+		return false
+	}
+	blockNum := lastBlockNum + 1
+	blockReward := protocol.ComputeBlockReward(blockNum)
+	if coinbase.Outputs[0].Amount != blockReward {
+		fmt.Println("Incorrect block reward for given block number")
+		return false
+	}
+
+	return true
+}
+
 // Returns if a block is valid or not given the state of the ledger
 // TODO: Make sure input validation is done dynamically - each transaction should update the utxo state
 func (pow *Pow) ValidateBlock(chain *chain.Chain, block *block.Block) bool {
@@ -87,19 +114,24 @@ func (pow *Pow) ValidateBlock(chain *chain.Chain, block *block.Block) bool {
 		return false
 	}
 
-	transactionHashes := make([][]byte, len(transactions))
+	// Validate coinbase transaction
+	coinbase := block.Coinbase
+	if !pow.ValidateCoinbaseTransaction(chain, coinbase) {
+		return false
+	}
+
+	// TODO: UPDATE STATE IN BETWEEN CHECKING IF TRANSACTIONS ARE VALID
+	transactionHashes := make([][]byte, len(transactions)+1)
 	for i, tx := range transactions {
 		// Check that each transaction is valid
-		// TODO: UPDATE STATE IN BETWEEN CHECKING IF TRANSACTIONS ARE VALID
 		if !pow.ValidateTransaction(chain, tx) {
 			return false
 		}
-
 		hash := tx.Hash()
 		transactionHashes[i] = hash[:]
 	}
+	transactionHashes[len(transactions)] = coinbase.Hash().Bytes()
 	allTransactionsHash := crypto.HashBytes(util.ConcatByteSlices(transactionHashes))
-	// AllTransactionsHash is the hash of all transactionns
 	if bytes.Compare(allTransactionsHash[:], header.AllTransactionsHash[:]) != 0 {
 		return false
 	}

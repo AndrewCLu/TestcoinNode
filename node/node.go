@@ -4,11 +4,14 @@ import (
 	"fmt"
 
 	"github.com/AndrewCLu/TestcoinNode/account"
+	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
 	"github.com/AndrewCLu/TestcoinNode/common"
 	"github.com/AndrewCLu/TestcoinNode/consensus"
 	"github.com/AndrewCLu/TestcoinNode/consensus/pow"
+	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/miner"
+	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
@@ -30,6 +33,14 @@ func New() (n *Node, ok bool) {
 	return &node, true
 }
 
+// Initializes the node by beginning the chain with the genesis block
+func (node *Node) Initialize(coinbaseAddress common.Address) bool {
+	genesisBlock := GetGenesisBlock(coinbaseAddress)
+	chainOk := node.Chain.Initialize(genesisBlock)
+
+	return chainOk
+}
+
 // Returns a new account
 // TODO: Key management for accounts
 func (node *Node) NewAccount() *account.Account {
@@ -37,6 +48,21 @@ func (node *Node) NewAccount() *account.Account {
 	fmt.Printf("Created account with address: %v\n", account.Address.Hex())
 
 	return account
+}
+
+// Returns a pointer to hard coded genesis block
+func GetGenesisBlock(coinbaseAddress common.Address) *block.Block {
+	coinbaseOutput := &transaction.TransactionOutput{
+		ReceiverAddress: coinbaseAddress,
+		Amount:          protocol.ComputeBlockReward(0),
+	}
+	coinbase, _ := transaction.New(
+		[]*transaction.TransactionInput{},
+		[]*transaction.TransactionOutput{coinbaseOutput},
+	)
+	block, _ := block.New(crypto.HashBytes([]byte("first")), 0, []*transaction.Transaction{}, coinbase)
+
+	return block
 }
 
 // Creates a new coinbase transaction for a given account

@@ -11,6 +11,7 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/common"
 	"github.com/AndrewCLu/TestcoinNode/consensus"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
+	"github.com/AndrewCLu/TestcoinNode/transaction"
 )
 
 const DefaultHashLimit = 10 * 1000 * 1000 // The maximum number of hashes a miner will attempt to solve a block
@@ -64,7 +65,16 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 	}
 	blockNum := lastBlockNum + 1
 
-	block, blockOk := block.New(lastBlockHash, blockNum, txs)
+	coinbaseOutput := &transaction.TransactionOutput{
+		ReceiverAddress: miner.Coinbase,
+		Amount:          protocol.ComputeBlockReward(blockNum),
+	}
+	coinbase, _ := transaction.New(
+		[]*transaction.TransactionInput{},
+		[]*transaction.TransactionOutput{coinbaseOutput},
+	)
+
+	block, blockOk := block.New(lastBlockHash, blockNum, txs, coinbase)
 	if !blockOk {
 		fmt.Println("Failed to create new block")
 		return nil, false

@@ -11,10 +11,11 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/util"
 )
 
-// A block is a collection of transactions with a header containing metadata
+// A block is a collection of transactions, including a coinbase, with a header containing metadata
 type Block struct {
-	Header *BlockHeader               `json:"header"`
-	Body   []*transaction.Transaction `json:"body"`
+	Header   *BlockHeader               `json:"header"`
+	Body     []*transaction.Transaction `json:"body"`
+	Coinbase *transaction.Transaction   `json:"coinbase"`
 }
 
 // A block header describes metatdata of a block, including a hash of its transactions,
@@ -34,6 +35,7 @@ func New(
 	previousBlockHash common.Hash,
 	currentBlockNumber int,
 	transactions []*transaction.Transaction,
+	coinbase *transaction.Transaction,
 ) (blk *Block, ok bool) {
 	// Check number of transactions is under the limit
 	if len(transactions) > protocol.MaxTransactionsInBlock {
@@ -41,12 +43,13 @@ func New(
 		return nil, false
 	}
 
-	// Hash all the transactions
-	transactionHashes := make([][]byte, len(transactions))
+	// Hash all the transactions, including coinbase
+	transactionHashes := make([][]byte, len(transactions)+1)
 	for i, tx := range transactions {
 		hash := tx.Hash()
 		transactionHashes[i] = hash.Bytes()
 	}
+	transactionHashes[len(transactions)] = coinbase.Hash().Bytes()
 	allTransactionsHash := crypto.HashBytes(util.ConcatByteSlices(transactionHashes))
 
 	header := BlockHeader{
@@ -59,18 +62,12 @@ func New(
 	}
 
 	block := Block{
-		Header: &header,
-		Body:   transactions,
+		Header:   &header,
+		Body:     transactions,
+		Coinbase: coinbase,
 	}
 
 	return &block, true
-}
-
-// Returns a pointer to hard coded genesis block
-func GetGenesisBlock() *Block {
-	block, _ := New(crypto.HashBytes([]byte("first")), 0, []*transaction.Transaction{})
-
-	return block
 }
 
 // Converts a BlockHeader into byte representation

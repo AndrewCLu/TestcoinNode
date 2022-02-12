@@ -67,6 +67,7 @@ func main() {
 	node, _ := node.New()
 
 	coinbase := node.NewAccount()
+	node.Initialize(coinbase.Address)
 	node.BeginMiner(coinbase.Address)
 
 	bob := node.NewAccount()
