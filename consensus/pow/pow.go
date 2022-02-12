@@ -24,7 +24,6 @@ func New() (p *Pow, ok bool) {
 
 // Returns if a transaction is valid or not based on the state of the ledger
 // TODO: Check that pointers aren't reused as different inputs in the same tx
-// TODO: Safety checks
 func (pow *Pow) ValidateTransaction(chain *chain.Chain, tx *transaction.Transaction) bool {
 	var inputTotal uint64 = 0
 	for _, input := range tx.Inputs {

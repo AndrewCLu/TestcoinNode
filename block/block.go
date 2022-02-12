@@ -36,7 +36,6 @@ func New(
 	transactions []*transaction.Transaction,
 ) (blk *Block, ok bool) {
 	// Check number of transactions is under the limit
-	// TODO: Enforce limit based on byte size of block
 	if len(transactions) > protocol.MaxTransactionsInBlock {
 		fmt.Println("Number of transactions exceeds max allowable.")
 		return nil, false
