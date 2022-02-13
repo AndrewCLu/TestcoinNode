@@ -103,4 +103,11 @@ func main() {
 
 	fmt.Println("Alice owes bob...")
 	node.PrintChainState()
+
+	node.NewPeerTransaction(alice, bob.Address, 4.5, .25)
+	node.NewPeerTransaction(alice, bob.Address, .5, 3.25)
+	node.MineBlock()
+
+	fmt.Println("Testing invalid transactions")
+	node.PrintChainState()
 }
