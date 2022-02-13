@@ -7,6 +7,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/jinzhu/copier"
+
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
 	"github.com/AndrewCLu/TestcoinNode/common"
@@ -65,6 +67,24 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 		return iFee > jFee
 	})
 
+	// Select transactions that are valid
+	// Takes transactions one at a time and sees if they maintain valid chain state
+	selectedTransactions := []*transaction.Transaction{}
+	tempChain, _ := chain.New()
+	copier.Copy(tempChain, miner.Chain)
+	for _, tx := range txs {
+		// Ensure we never exceed the transaction limit
+		if len(selectedTransactions) > protocol.MaxTransactionsInBlock {
+			break
+		}
+		// Check that including this transaction maintains valid state
+		if !miner.Consensus.ValidatePendingTransaction(tempChain, tx) {
+			continue
+		}
+		tempChain.AddTransaction(tx)
+		selectedTransactions = append(selectedTransactions, tx)
+	}
+
 	lastBlockHash, lastBlockNum, lastBlockOk := miner.Chain.GetLastBlockInfo()
 	if !lastBlockOk {
 		fmt.Println("Could not get last block from current chain")
@@ -81,7 +101,7 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 		[]*transaction.TransactionOutput{coinbaseOutput},
 	)
 
-	block, blockOk := block.New(lastBlockHash, blockNum, txs, coinbase)
+	block, blockOk := block.New(lastBlockHash, blockNum, selectedTransactions, coinbase)
 	if !blockOk {
 		fmt.Println("Failed to create new block")
 		return nil, false
@@ -94,6 +114,11 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 		return nil, false
 	}
 	block.Header.Nonce = nonce
+
+	if !miner.Consensus.ValidateBlock(miner.Chain, block) {
+		fmt.Println("Newly mined block is not valid")
+		return nil, false
+	}
 
 	blockHash := block.Hash()
 	for _, tx := range block.Body {
@@ -117,7 +142,6 @@ func (miner *Miner) solve(header block.BlockHeader) (nonce uint32, ok bool) {
 	t1 := time.Now()
 	fmt.Printf("Solving block with target %v ...\n", target.Hex())
 
-	// TODO: Check valid header using consensus
 	for count := 0; count < miner.Config.HashLimit; count++ {
 		count += 1
 		header.Nonce = nonce

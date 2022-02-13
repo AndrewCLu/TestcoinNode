@@ -9,7 +9,7 @@ const CurrentProtocolVersion = 1 // Current protocol version
 
 const TestcoinUnitMultipler = 1000000000 // Actual account values are 1000000000 times less than the transaction amount values
 
-const MaxTransactionsInBlock = 10 // How many transactions are allowed in each block
+const MaxTransactionsInBlock = 2 // How many transactions are allowed in each block
 
 // Given the current block number, returns the appropriate target for solving proof of work
 func ComputeTarget(blockNumber int) common.Target {

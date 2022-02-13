@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/jinzhu/copier"
+
 	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
@@ -106,12 +108,17 @@ func (pow *Pow) ValidateCoinbaseTransaction(chain *chain.Chain, coinbase *transa
 
 // Returns if a block is valid or not given the state of the ledger
 // TODO: Make sure input validation is done dynamically - each transaction should update the utxo state
-func (pow *Pow) ValidateBlock(chain *chain.Chain, block *block.Block) bool {
+func (pow *Pow) ValidateBlock(chn *chain.Chain, block *block.Block) bool {
 	header := block.Header
 	transactions := block.Body
-	prevHash, prevBlockNum, success := chain.GetLastBlockInfo()
+	prevHash, prevBlockNum, success := chn.GetLastBlockInfo()
 	// Previous block is retrievable
 	if !success {
+		return false
+	}
+
+	// Number of transactions does not exceed limit
+	if len(transactions) > protocol.MaxTransactionsInBlock {
 		return false
 	}
 
@@ -122,17 +129,19 @@ func (pow *Pow) ValidateBlock(chain *chain.Chain, block *block.Block) bool {
 
 	// Validate coinbase transaction
 	coinbase := block.Coinbase
-	if !pow.ValidateCoinbaseTransaction(chain, coinbase) {
+	if !pow.ValidateCoinbaseTransaction(chn, coinbase) {
 		return false
 	}
 
-	// TODO: UPDATE STATE IN BETWEEN CHECKING IF TRANSACTIONS ARE VALID
+	// Creates a new chain to test validity of this block
+	tempChain, _ := chain.New()
+	copier.Copy(tempChain, chn)
 	transactionHashes := make([][]byte, len(transactions)+1)
 	for i, tx := range transactions {
-		// Check that each transaction is valid
-		if !pow.ValidatePendingTransaction(chain, tx) {
+		if !pow.ValidatePendingTransaction(tempChain, tx) {
 			return false
 		}
+		tempChain.AddTransaction(tx)
 		hash := tx.Hash()
 		transactionHashes[i] = hash[:]
 	}
