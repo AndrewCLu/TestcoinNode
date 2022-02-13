@@ -81,16 +81,11 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 	}
 
 	// Compute the nonce that solves a block
-	fmt.Println("PRE SOLVE:")
-	fmt.Println(block.Header)
-	nonce, solveOk := miner.solve(block.Header)
+	nonce, solveOk := miner.solve(*block.Header)
 	if !solveOk {
 		fmt.Println("Failed to solve block with allotted parameters")
 		return nil, false
 	}
-	fmt.Println("POST SOLVE:")
-	fmt.Println(block.Header)
-	fmt.Println(nonce)
 	block.Header.Nonce = nonce
 
 	blockHash := block.Hash()
@@ -103,8 +98,7 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 
 // Given a block header, compute the nonce that results in a hash under the desired target
 // Does not modify the block header passed in
-// TOOD: Make sure Solve does not modify the original header
-func (miner *Miner) solve(header *block.BlockHeader) (nonce uint32, ok bool) {
+func (miner *Miner) solve(header block.BlockHeader) (nonce uint32, ok bool) {
 	// Start the nonce at a random number to avoid multiple nodes mining the same nonces
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)

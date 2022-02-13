@@ -297,6 +297,11 @@ func (t *Transaction) Hash() common.Hash {
 	return crypto.HashBytes(t.Bytes())
 }
 
+// Hashes a utxo
+func (utxo *TransactionOutputPointer) Hash() common.Hash {
+	return crypto.HashBytes(utxo.Bytes())
+}
+
 // Checks if two transactions are equal
 func (ta *Transaction) Equal(tb *Transaction) bool {
 	hasha := ta.Hash()

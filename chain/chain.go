@@ -57,6 +57,23 @@ func (chain *Chain) GetPendingTransactions(num int) (txs []*transaction.Transact
 	return txs, true
 }
 
+// Gets up to num pending transactions
+// Returns bool indicating success
+func (chain *Chain) GetPendingTransactionsByAddress(address common.Address) (txs []*transaction.Transaction, ok bool) {
+	for _, tx := range chain.PendingTransactions {
+		for _, input := range tx.Inputs {
+			outputTx := chain.Transactions[input.OutputPointer.TransactionHash]
+			inputAddress := outputTx.Outputs[input.OutputPointer.OutputIndex].ReceiverAddress
+			if inputAddress.Equal(address) {
+				txs = append(txs, tx)
+				break
+			}
+		}
+	}
+
+	return txs, true
+}
+
 // Add a pending transaction to the list
 // Returns bool indicating success
 func (chain *Chain) AddPendingTransaction(tx *transaction.Transaction) (ok bool) {

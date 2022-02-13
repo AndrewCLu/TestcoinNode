@@ -65,7 +65,21 @@ func GetGenesisBlock(coinbaseAddress common.Address) *block.Block {
 	return block
 }
 
+// Validates a transaction and if valid, adds it to the chain's pool of pending transactions
+// Returns a bool indicating success
+func (node *Node) AddPendingTransaction(tx *transaction.Transaction) bool {
+	validateTx := node.Consensus.ValidateTransaction(node.Chain, tx)
+	if !validateTx {
+		fmt.Println("Failed to validate new transaction, not adding to chain")
+		return false
+	}
+
+	node.Chain.AddPendingTransaction(tx)
+	return true
+}
+
 // Creates a new coinbase transaction for a given account
+// Testing function only, this is only ever created by the miner
 func (node *Node) NewCoinbaseTransaction(account *account.Account, readableAmount float64) *transaction.Transaction {
 	address := account.Address
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
@@ -86,30 +100,72 @@ func (node *Node) NewCoinbaseTransaction(account *account.Account, readableAmoun
 		readableAmount,
 		address.Hex(),
 	)
-	node.Chain.AddPendingTransaction(newTransaction)
+
 	return newTransaction
 }
 
 // Creates a new peer transaction for a given amount
-func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress common.Address, readableAmount float64) *transaction.Transaction {
+// Readable indicates that the units taken in by this function are in decimal units, which need to be converted to integer units before sending
+func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress common.Address, readableAmount float64, readableTransactionFee float64) *transaction.Transaction {
 	senderAddress := account.Address
 	senderPublicKey := account.PublicKey
 	senderPrivateKey := account.PrivateKey
 	amount := util.Float64UnitToUnit64Unit(readableAmount)
+	transactionFee := util.Float64UnitToUnit64Unit(readableTransactionFee)
 
 	// Check that sender has enough money
 	senderValue := node.Chain.GetAccountValue(senderAddress)
-	if senderValue < amount {
+	if senderValue < amount+transactionFee {
 		fmt.Printf("Attempted to create new peer transaction but sender has insufficient funds.")
 		return nil
 	}
 
-	outputPointers, _ := node.Chain.GetUnspentTransactions(senderAddress)
+	allUtxos, _ := node.Chain.GetUnspentTransactions(senderAddress)
+	pendingTransactions, _ := node.Chain.GetPendingTransactionsByAddress(senderAddress)
+	pendingUtxos := []*transaction.TransactionOutputPointer{}
+	selectedUtxos := []*transaction.TransactionOutputPointer{}
+	var currentAmount uint64 = 0
+	// Two step process: First select Utxos that are not used in a pending transaction
+	// If all utxos are used, then select ones that are part of a pending transaction
+	for _, utxo := range allUtxos {
+		match := false
+	nextUtxo:
+		for _, tx := range pendingTransactions {
+			for _, input := range tx.Inputs {
+				// Utxo is already pending, don't add to this transaction unless we cannot achieve the desired amount otherwise
+				if input.OutputPointer.Hash().Equal(utxo.Hash()) {
+					match = true
+					pendingUtxos = append(pendingUtxos, utxo)
+					break nextUtxo
+				}
+			}
+		}
+		// Utxo is not pending, add to this transaction
+		if !match {
+			selectedUtxos = append(selectedUtxos, utxo)
+			utxoTx, _ := node.Chain.GetTransaction(utxo.TransactionHash)
+			currentAmount += utxoTx.Outputs[utxo.OutputIndex].Amount
+		}
 
-	// Current implementation just uses all utxos in a transaction
-	// TODO: Pick the minimum number of utxos an account can use to complete a transaction
+		if currentAmount >= amount+transactionFee {
+			break
+		}
+	}
+	// Add utxos that are part of a pending trnasaction if the amount has not been reached
+	if currentAmount < amount+transactionFee {
+		for _, utxo := range pendingUtxos {
+			selectedUtxos = append(selectedUtxos, utxo)
+			utxoTx, _ := node.Chain.GetTransaction(utxo.TransactionHash)
+			currentAmount += utxoTx.Outputs[utxo.OutputIndex].Amount
+
+			if currentAmount >= amount+transactionFee {
+				break
+			}
+		}
+	}
+
 	inputs := []*transaction.TransactionInput{}
-	for _, ptr := range outputPointers {
+	for _, ptr := range selectedUtxos {
 		signature := node.Consensus.SignInput(senderPrivateKey, ptr)
 
 		verification := &transaction.TransactionInputVerification{
@@ -127,7 +183,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 	}
 
 	// If sender has more money than amount, create a refund transaction output
-	diff := senderValue - amount
+	diff := senderValue - amount - transactionFee
 
 	outputReceiver := &transaction.TransactionOutput{
 		ReceiverAddress: receiverAddress,
@@ -150,13 +206,14 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 		return nil
 	}
 
-	fmt.Printf("Created new peer transaction %v sending %v from %v to %v\n",
+	fmt.Printf("Created new peer transaction %v sending %v from %v to %v with transaction fee of %v\n",
 		newTransaction.Hash().Hex(),
 		readableAmount,
 		senderAddress.Hex(),
 		receiverAddress.Hex(),
+		readableTransactionFee,
 	)
-	node.Chain.AddPendingTransaction(newTransaction)
+
 	return newTransaction
 }
 
