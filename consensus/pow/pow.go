@@ -75,7 +75,7 @@ func (pow *Pow) ValidatePendingTransaction(chain *chain.Chain, tx *transaction.T
 		outputTotal += output.Amount
 	}
 
-	return inputTotal > outputTotal
+	return inputTotal >= outputTotal
 }
 
 // Returns boolean indicating if a coinbase transaction is valid or not based onn the state of the ledger

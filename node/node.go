@@ -127,6 +127,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 	var currentAmount uint64 = 0
 	// Two step process: First select Utxos that are not used in a pending transaction
 	// If all utxos are used, then select ones that are part of a pending transaction
+finishedSelection:
 	for _, utxo := range allUtxos {
 		match := false
 	nextUtxo:
@@ -148,7 +149,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 		}
 
 		if currentAmount >= amount+transactionFee {
-			break
+			break finishedSelection
 		}
 	}
 	// Add utxos that are part of a pending trnasaction if the amount has not been reached
@@ -183,7 +184,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 	}
 
 	// If sender has more money than amount, create a refund transaction output
-	diff := senderValue - amount - transactionFee
+	diff := currentAmount - amount - transactionFee
 
 	outputReceiver := &transaction.TransactionOutput{
 		ReceiverAddress: receiverAddress,
@@ -202,6 +203,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 	newTransaction, success := transaction.New(inputs, outputs)
 
 	if !success || !node.Consensus.ValidatePendingTransaction(node.Chain, newTransaction) {
+		node.PrintTransaction(newTransaction)
 		fmt.Println("Attempted to create new peer transaction and FAILED")
 		return nil
 	}

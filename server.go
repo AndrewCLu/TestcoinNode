@@ -81,18 +81,21 @@ func main() {
 	fmt.Println("Creating the blockchain...")
 	node.PrintChainState()
 
+	node.NewPeerTransaction(satoshi, bob.Address, 4.1, 2)
+	node.NewPeerTransaction(satoshi, bob.Address, 4.2, 2.4)
+	node.NewPeerTransaction(satoshi, bob.Address, 4.3, 2.3)
+	node.NewPeerTransaction(satoshi, bob.Address, 4.4, 2.2)
+	node.NewPeerTransaction(satoshi, bob.Address, 4.5, 2.1)
+	node.NewPeerTransaction(satoshi, bob.Address, 4.6, 2.05)
+	node.MineBlock()
+
+	fmt.Println("Distributing the wealth to bob...")
+	node.PrintChainState()
+
 	node.NewPeerTransaction(satoshi, alice.Address, 3, 1)
 	node.MineBlock()
 
-	node.NewPeerTransaction(satoshi, bob.Address, 4, 2)
-	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.4)
-	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.3)
-	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.2)
-	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.1)
-	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.05)
-	node.MineBlock()
-
-	fmt.Println("Distributing the wealth...")
+	fmt.Println("Sending to alice...")
 	node.PrintChainState()
 
 	node.NewPeerTransaction(alice, bob.Address, .5, .25)

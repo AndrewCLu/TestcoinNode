@@ -74,10 +74,21 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 		if len(selectedTransactions) > protocol.MaxTransactionsInBlock {
 			break
 		}
+
 		// Check that including this transaction maintains valid state
 		if !miner.Consensus.ValidatePendingTransaction(tempChain, tx) {
 			continue
 		}
+
+		// Append transaction fee output to this transaction
+		transactionFee, _ := tempChain.GetPendingTransactionFee(tx)
+		transactionFeeOutput := &transaction.TransactionOutput{
+			ReceiverAddress: miner.Coinbase,
+			Amount:          transactionFee,
+		}
+		tx.Outputs = append(tx.Outputs, transactionFeeOutput)
+
+		// Update temp chain and selected transactions
 		tempChain.AddTransaction(tx)
 		selectedTransactions = append(selectedTransactions, tx)
 	}
