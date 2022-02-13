@@ -96,8 +96,29 @@ func (chain *Chain) GetPendingTransactionsByAddress(address common.Address) (txs
 
 // Add a pending transaction to the list
 // Returns bool indicating success
-func (chain *Chain) AddPendingTransaction(tx *transaction.Transaction) (ok bool) {
+func (chain *Chain) AddPendingTransaction(tx *transaction.Transaction) bool {
 	chain.PendingTransactions = append(chain.PendingTransactions, tx)
+
+	return true
+}
+
+// Removes a list of pending transactions from the pool
+// Returns a bool indicating success
+func (chain *Chain) RemovePendingTransactions(txs []*transaction.Transaction) bool {
+	for _, tx := range txs {
+		ind := -1
+		for i, ptx := range chain.PendingTransactions {
+			if tx.Equal(ptx) {
+				ind = i
+			}
+		}
+
+		if ind != -1 {
+			// Remove pending transaction at index ind
+			chain.PendingTransactions[ind] = chain.PendingTransactions[len(chain.PendingTransactions)-1]
+			chain.PendingTransactions = chain.PendingTransactions[:len(chain.PendingTransactions)-1]
+		}
+	}
 
 	return true
 }
@@ -240,6 +261,8 @@ func (chain *Chain) PrintChainState() {
 			)
 		}
 	}
+
+	fmt.Printf("There are %v pending trnasactions\n", len(chain.PendingTransactions))
 	fmt.Printf("-------------------END CHAIN STATE-------------------\n")
 }
 

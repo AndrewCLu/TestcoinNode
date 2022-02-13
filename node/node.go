@@ -239,6 +239,22 @@ func (node *Node) MineBlock() {
 	if valid {
 		node.Chain.AddBlock(block)
 	}
+
+	node.RemoveInvalidPendingTransactions()
+}
+
+// Removes all invalid pending transactions given the current state of the chain
+// Returns a bool indicating success
+func (node *Node) RemoveInvalidPendingTransactions() bool {
+	invalidTransactions := []*transaction.Transaction{}
+	for _, tx := range node.Chain.PendingTransactions {
+		if !node.Consensus.ValidatePendingTransaction(node.Chain, tx) {
+			invalidTransactions = append(invalidTransactions, tx)
+		}
+	}
+
+	ok := node.Chain.RemovePendingTransactions(invalidTransactions)
+	return ok
 }
 
 // Gets the human readable value of an account
