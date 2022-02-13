@@ -91,7 +91,7 @@ func (node *Node) NewCoinbaseTransaction(account *account.Account, readableAmoun
 	)
 
 	if !success || !node.Consensus.ValidatePendingTransaction(node.Chain, newTransaction) {
-		fmt.Printf("Attempted to create new coinbase transaction and FAILED")
+		fmt.Println("Attempted to create new coinbase transaction and FAILED")
 		return nil
 	}
 
@@ -116,7 +116,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 	// Check that sender has enough money
 	senderValue := node.Chain.GetAccountValue(senderAddress)
 	if senderValue < amount+transactionFee {
-		fmt.Printf("Attempted to create new peer transaction but sender has insufficient funds.")
+		fmt.Println("Attempted to create new peer transaction but sender has insufficient funds.")
 		return nil
 	}
 
@@ -202,7 +202,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 	newTransaction, success := transaction.New(inputs, outputs)
 
 	if !success || !node.Consensus.ValidatePendingTransaction(node.Chain, newTransaction) {
-		fmt.Printf("Attempted to create new peer transaction and FAILED")
+		fmt.Println("Attempted to create new peer transaction and FAILED")
 		return nil
 	}
 
@@ -214,6 +214,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 		readableTransactionFee,
 	)
 
+	node.AddPendingTransaction(newTransaction)
 	return newTransaction
 }
 
@@ -227,9 +228,12 @@ func (node *Node) MineBlock() {
 	if node.Miner == nil {
 		return
 	}
-	block, _ := node.Miner.MineBlock()
-	valid := node.Consensus.ValidateBlock(node.Chain, block)
+	block, ok := node.Miner.MineBlock()
+	if !ok {
+		return
+	}
 
+	valid := node.Consensus.ValidateBlock(node.Chain, block)
 	if valid {
 		node.Chain.AddBlock(block)
 	}
@@ -250,4 +254,19 @@ func (node *Node) GetReadableAccountValue(account *account.Account) float64 {
 // Testing function to print the state of the chain
 func (node *Node) PrintChainState() {
 	node.Chain.PrintChainState()
+}
+
+// Prints a given transaction
+func (node *Node) PrintTransaction(tx *transaction.Transaction) {
+	fmt.Printf("Printing transaction %v...", tx.Hash().Hex())
+	fmt.Printf("Inputs: ")
+	for _, input := range tx.Inputs {
+		inputAmount, _ := node.Chain.GetOutputAmount(input.OutputPointer)
+		fmt.Printf("%v from transaction %v ", inputAmount, input.OutputPointer.TransactionHash.Hex())
+	}
+	fmt.Printf("Outputs: ")
+	for _, output := range tx.Outputs {
+		fmt.Printf("%v to address %v ", output.Amount, output.ReceiverAddress.Hex())
+	}
+	fmt.Printf("\n")
 }

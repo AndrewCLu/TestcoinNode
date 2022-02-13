@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/jinzhu/copier"
-
 	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
@@ -134,8 +132,7 @@ func (pow *Pow) ValidateBlock(chn *chain.Chain, block *block.Block) bool {
 	}
 
 	// Creates a new chain to test validity of this block
-	tempChain, _ := chain.New()
-	copier.Copy(tempChain, chn)
+	tempChain := chn.UnsafeCopy()
 	transactionHashes := make([][]byte, len(transactions)+1)
 	for i, tx := range transactions {
 		if !pow.ValidatePendingTransaction(tempChain, tx) {

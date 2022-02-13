@@ -1,6 +1,10 @@
 package main
 
-import "github.com/AndrewCLu/TestcoinNode/node"
+import (
+	"fmt"
+
+	"github.com/AndrewCLu/TestcoinNode/node"
+)
 
 // import (
 // 	"fmt"
@@ -64,33 +68,36 @@ import "github.com/AndrewCLu/TestcoinNode/node"
 // }
 
 func main() {
+	fmt.Println("\n\n\n-------------------BEGINNING TEST-------------------")
 	node, _ := node.New()
 
-	coinbase := node.NewAccount()
-	node.Initialize(coinbase.Address)
-	node.BeginMiner(coinbase.Address)
+	satoshi := node.NewAccount()
+	node.Initialize(satoshi.Address)
+	node.BeginMiner(satoshi.Address)
 
-	bob := node.NewAccount()
 	alice := node.NewAccount()
+	bob := node.NewAccount()
 
-	node.GetReadableAccountValue(bob)
-	node.GetReadableAccountValue(alice)
+	fmt.Println("Creating the blockchain...")
 	node.PrintChainState()
 
-	node.NewCoinbaseTransaction(bob, 69.69)
-	node.NewCoinbaseTransaction(bob, 10)
+	node.NewPeerTransaction(satoshi, alice.Address, 3, 1)
 	node.MineBlock()
 
-	node.NewPeerTransaction(bob, alice.Address, 69)
+	node.NewPeerTransaction(satoshi, bob.Address, 4, 2)
+	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.4)
+	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.3)
+	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.2)
+	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.1)
+	node.NewPeerTransaction(satoshi, bob.Address, 4, 2.05)
 	node.MineBlock()
 
-	node.GetReadableAccountValue(bob)
-	node.GetReadableAccountValue(alice)
+	fmt.Println("Distributing the wealth...")
+	node.PrintChainState()
 
-	node.NewPeerTransaction(alice, bob.Address, 6)
+	node.NewPeerTransaction(alice, bob.Address, .5, .25)
 	node.MineBlock()
 
-	node.GetReadableAccountValue(bob)
-	node.GetReadableAccountValue(alice)
+	fmt.Println("Alice owes bob...")
 	node.PrintChainState()
 }

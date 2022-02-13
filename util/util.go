@@ -27,13 +27,13 @@ func ConcatByteSlices(slices [][]byte) []byte {
 // TODO: Handle special cases where values are very large
 // Converts a human readable float representation of a Testcoin amount into a transactional amount
 func Float64UnitToUnit64Unit(value float64) uint64 {
-	return uint64(value * protocol.TestcoinUnitMultipler)
+	return uint64(value * protocol.TestcoinUnitMultiplier)
 }
 
 // TODO: Handle special cases where values are very large
 // Converts a uin64 transactional representation of a Testcoin amount innto human readable float units
 func Uint64UnitToFloat64Unit(value uint64) float64 {
-	return float64(value) / protocol.TestcoinUnitMultipler
+	return float64(value) / protocol.TestcoinUnitMultiplier
 }
 
 // Converts a uint16 to byte representation

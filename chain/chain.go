@@ -36,6 +36,8 @@ func (chain *Chain) Initialize(genesisBlock *block.Block) bool {
 	chain.Blocks[genesisBlockHash] = genesisBlock
 	chain.LastBlockHash = genesisBlockHash
 
+	chain.AddBlock(genesisBlock)
+
 	return true
 }
 
@@ -167,17 +169,11 @@ func (chain *Chain) AddTransaction(tx *transaction.Transaction) (ok bool) {
 // This is not a smart function - it will add the block without validation
 func (chain *Chain) AddBlock(block *block.Block) (ok bool) {
 	for _, tx := range block.Body {
-		success := chain.AddTransaction(tx)
-		// Make sure transactions were successfully added
-		if !success {
-			return false
-		}
+		fmt.Printf("Adding transaction to chain %v\n", tx.Hash().Hex())
+		chain.AddTransaction(tx)
 	}
-
-	coinbaseOk := chain.AddTransaction(block.Coinbase)
-	if !coinbaseOk {
-		return false
-	}
+	fmt.Printf("Adding coinbase to chain: %v\n", block.Coinbase.Hash().Hex())
+	chain.AddTransaction(block.Coinbase)
 
 	// Add new block
 	hash := block.Hash()
@@ -221,6 +217,7 @@ func (chain *Chain) GetAccountValue(address common.Address) uint64 {
 
 // Prints the current state of the blockchain
 func (chain *Chain) PrintChainState() {
+	fmt.Printf("-------------------PRINTING CHAIN STATE-------------------\n")
 	fmt.Printf("Blocks mined...\n")
 	for _, block := range chain.Blocks {
 		fmt.Printf("Block: %v\n", block.Hash().Hex())
@@ -243,4 +240,29 @@ func (chain *Chain) PrintChainState() {
 			)
 		}
 	}
+	fmt.Printf("-------------------END CHAIN STATE-------------------\n")
+}
+
+// Shallow copies chain over into another chain
+func (chain *Chain) UnsafeCopy() *Chain {
+	otherChain, _ := New()
+	for blockHash, block := range chain.Blocks {
+		otherChain.Blocks[blockHash] = block
+	}
+	for txHash, tx := range chain.Transactions {
+		otherChain.Transactions[txHash] = tx
+	}
+	otherChain.LastBlockHash = chain.LastBlockHash
+	for _, tx := range chain.PendingTransactions {
+		otherChain.PendingTransactions = append(otherChain.PendingTransactions, tx)
+	}
+	for address, utxos := range chain.UnspentOutputs {
+		newUtxos := []*transaction.TransactionOutputPointer{}
+		for _, utxo := range utxos {
+			newUtxos = append(newUtxos, utxo)
+		}
+		otherChain.UnspentOutputs[address] = newUtxos
+	}
+
+	return otherChain
 }

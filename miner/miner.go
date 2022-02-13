@@ -7,8 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jinzhu/copier"
-
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
 	"github.com/AndrewCLu/TestcoinNode/common"
@@ -70,8 +68,7 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 	// Select transactions that are valid
 	// Takes transactions one at a time and sees if they maintain valid chain state
 	selectedTransactions := []*transaction.Transaction{}
-	tempChain, _ := chain.New()
-	copier.Copy(tempChain, miner.Chain)
+	tempChain := miner.Chain.UnsafeCopy()
 	for _, tx := range txs {
 		// Ensure we never exceed the transaction limit
 		if len(selectedTransactions) > protocol.MaxTransactionsInBlock {
@@ -83,6 +80,11 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 		}
 		tempChain.AddTransaction(tx)
 		selectedTransactions = append(selectedTransactions, tx)
+	}
+
+	if len(selectedTransactions) == 0 {
+		fmt.Println("No pending transactions...cannot mine block")
+		return nil, false
 	}
 
 	lastBlockHash, lastBlockNum, lastBlockOk := miner.Chain.GetLastBlockInfo()
@@ -114,11 +116,6 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 		return nil, false
 	}
 	block.Header.Nonce = nonce
-
-	if !miner.Consensus.ValidateBlock(miner.Chain, block) {
-		fmt.Println("Newly mined block is not valid")
-		return nil, false
-	}
 
 	blockHash := block.Hash()
 	for _, tx := range block.Body {
