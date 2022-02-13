@@ -7,6 +7,7 @@ import (
 	"github.com/AndrewCLu/TestcoinNode/account"
 	"github.com/AndrewCLu/TestcoinNode/block"
 	"github.com/AndrewCLu/TestcoinNode/chain"
+	"github.com/AndrewCLu/TestcoinNode/common"
 	"github.com/AndrewCLu/TestcoinNode/crypto"
 	"github.com/AndrewCLu/TestcoinNode/protocol"
 	"github.com/AndrewCLu/TestcoinNode/transaction"
@@ -24,15 +25,24 @@ func New() (p *Pow, ok bool) {
 }
 
 // Returns if a transaction is valid or not based on the state of the ledger
-// TODO: Check that pointers aren't reused as different inputs in the same tx
 func (pow *Pow) ValidatePendingTransaction(chain *chain.Chain, tx *transaction.Transaction) bool {
 	var inputTotal uint64 = 0
+	usedUtxoHashes := []common.Hash{}
 	for _, input := range tx.Inputs {
 		ptr := input.OutputPointer
 		verification := input.Verification
 		signature := verification.Signature
 		senderPublicKey := verification.EncodedPublicKey
 		senderAddress := account.GetAddressFromPublicKey(senderPublicKey)
+
+		// Verify this utxo has not been used already
+		utxoHash := ptr.Hash()
+		for _, usedHash := range usedUtxoHashes {
+			if utxoHash.Equal(usedHash) {
+				return false
+			}
+		}
+		usedUtxoHashes = append(usedUtxoHashes, utxoHash)
 
 		// Verify that the input is actually signed by the utxo possessor
 		if !pow.VerifyInput(senderPublicKey, ptr, signature) {
@@ -65,11 +75,7 @@ func (pow *Pow) ValidatePendingTransaction(chain *chain.Chain, tx *transaction.T
 		outputTotal += output.Amount
 	}
 
-	if len(tx.Inputs) != 0 && inputTotal != outputTotal {
-		return false
-	}
-
-	return true
+	return inputTotal > outputTotal
 }
 
 // Returns boolean indicating if a coinbase transaction is valid or not based onn the state of the ledger
