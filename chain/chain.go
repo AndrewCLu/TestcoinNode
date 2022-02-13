@@ -45,6 +45,24 @@ func (chain *Chain) GetTransaction(hash common.Hash) (tx *transaction.Transactio
 	return chain.Transactions[hash], true
 }
 
+// Given a pending transaction, return its transaction fee
+func (chain *Chain) GetPendingTransactionFee(tx *transaction.Transaction) (fee uint64, ok bool) {
+	var inputs uint64 = 0
+	var outputs uint64 = 0
+	for _, input := range tx.Inputs {
+		inputAmount, inputOk := chain.GetOutputAmount(input.OutputPointer)
+		if !inputOk {
+			return 0, false
+		}
+		inputs += inputAmount
+	}
+	for _, output := range tx.Outputs {
+		outputs += output.Amount
+	}
+
+	return inputs - outputs, true
+}
+
 // Gets up to num pending transactions
 // Returns bool indicating success
 // TODO: Have a ranking of pending transactions to retrieve by time added or miner fee

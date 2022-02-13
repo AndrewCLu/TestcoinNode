@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
+	"sort"
 	"time"
 
 	"github.com/AndrewCLu/TestcoinNode/block"
@@ -50,14 +51,19 @@ func New(coinbase common.Address, chain *chain.Chain, consensus consensus.Consen
 // Tries to mine a block from pending transactions on the chain
 // Returns the block and a boolean indicating success
 // TODO: Miner must validate transactions
-// TODO: Have better selection criteria for transactions
-// TOOD: Add a coinbase transaction for the miner
 func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 	txs, txOk := miner.Chain.GetPendingTransactions(protocol.MaxTransactionsInBlock)
 	if !txOk {
 		fmt.Println("Could not get transactions from the current chain")
 		return nil, false
 	}
+
+	// Sort transactions by decreasing fee
+	sort.Slice(txs, func(i, j int) bool {
+		iFee, _ := miner.Chain.GetPendingTransactionFee(txs[i])
+		jFee, _ := miner.Chain.GetPendingTransactionFee(txs[j])
+		return iFee > jFee
+	})
 
 	lastBlockHash, lastBlockNum, lastBlockOk := miner.Chain.GetLastBlockInfo()
 	if !lastBlockOk {
