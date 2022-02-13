@@ -80,12 +80,17 @@ func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
 		return nil, false
 	}
 
-	// Compute the nonce that solves a block header
+	// Compute the nonce that solves a block
+	fmt.Println("PRE SOLVE:")
+	fmt.Println(block.Header)
 	nonce, solveOk := miner.solve(block.Header)
 	if !solveOk {
 		fmt.Println("Failed to solve block with allotted parameters")
 		return nil, false
 	}
+	fmt.Println("POST SOLVE:")
+	fmt.Println(block.Header)
+	fmt.Println(nonce)
 	block.Header.Nonce = nonce
 
 	blockHash := block.Hash()

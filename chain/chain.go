@@ -138,6 +138,7 @@ func (chain *Chain) AddTransaction(tx *transaction.Transaction) (ok bool) {
 // Assumes that block has been validated by node
 // Returns bool indicating success
 // TODO: Make this atomic - either it updates entire state if success or not at all
+// TODO: Add coinbase transactions
 func (chain *Chain) AddBlock(block *block.Block) (ok bool) {
 	for _, tx := range block.Body {
 		success := chain.AddTransaction(tx)
