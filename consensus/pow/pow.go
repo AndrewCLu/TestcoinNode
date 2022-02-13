@@ -25,7 +25,7 @@ func New() (p *Pow, ok bool) {
 
 // Returns if a transaction is valid or not based on the state of the ledger
 // TODO: Check that pointers aren't reused as different inputs in the same tx
-func (pow *Pow) ValidateTransaction(chain *chain.Chain, tx *transaction.Transaction) bool {
+func (pow *Pow) ValidatePendingTransaction(chain *chain.Chain, tx *transaction.Transaction) bool {
 	var inputTotal uint64 = 0
 	for _, input := range tx.Inputs {
 		ptr := input.OutputPointer
@@ -124,7 +124,7 @@ func (pow *Pow) ValidateBlock(chain *chain.Chain, block *block.Block) bool {
 	transactionHashes := make([][]byte, len(transactions)+1)
 	for i, tx := range transactions {
 		// Check that each transaction is valid
-		if !pow.ValidateTransaction(chain, tx) {
+		if !pow.ValidatePendingTransaction(chain, tx) {
 			return false
 		}
 		hash := tx.Hash()

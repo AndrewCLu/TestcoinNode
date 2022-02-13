@@ -91,7 +91,7 @@ func (chain *Chain) GetLastBlockInfo() (hash common.Hash, blockNum int, ok bool)
 
 // Adds a confirmed transaction to the chain
 // Returns bool indicating success
-// TODO: Make this atomic - either it updates entire state if success or not at all
+// This is not a smart function - it will add the transaction, update the pending transactions and the utxos without validation
 func (chain *Chain) AddTransaction(tx *transaction.Transaction) (ok bool) {
 	// Find matching pending transaction
 	ind := -1
@@ -101,14 +101,11 @@ func (chain *Chain) AddTransaction(tx *transaction.Transaction) (ok bool) {
 		}
 	}
 
-	// No pending transaction matches
-	if ind == -1 {
-		return false
+	if ind != -1 {
+		// Remove pending transaction at index ind
+		chain.PendingTransactions[ind] = chain.PendingTransactions[len(chain.PendingTransactions)-1]
+		chain.PendingTransactions = chain.PendingTransactions[:len(chain.PendingTransactions)-1]
 	}
-
-	// Remove pending transaction at index ind
-	chain.PendingTransactions[ind] = chain.PendingTransactions[len(chain.PendingTransactions)-1]
-	chain.PendingTransactions = chain.PendingTransactions[:len(chain.PendingTransactions)-1]
 
 	// Add new transaction
 	txHash := tx.Hash()
@@ -116,7 +113,6 @@ func (chain *Chain) AddTransaction(tx *transaction.Transaction) (ok bool) {
 
 	for _, input := range tx.Inputs {
 		ptr := input.OutputPointer
-		// TODO: Check if tx or output doesn't exist
 		outputTx := chain.Transactions[ptr.TransactionHash]
 		address := outputTx.Outputs[ptr.OutputIndex].ReceiverAddress
 
@@ -128,14 +124,11 @@ func (chain *Chain) AddTransaction(tx *transaction.Transaction) (ok bool) {
 			}
 		}
 
-		// No utxo pointer matches
-		if utxoInd == -1 {
-			return false
+		if utxoInd != -1 {
+			// Remove utxo pointer at index utxoInd
+			chain.UnspentOutputs[address][utxoInd] = chain.UnspentOutputs[address][len(chain.UnspentOutputs[address])-1]
+			chain.UnspentOutputs[address] = chain.UnspentOutputs[address][:len(chain.UnspentOutputs[address])-1]
 		}
-
-		// Remove utxo pointer at index utxoInd
-		chain.UnspentOutputs[address][utxoInd] = chain.UnspentOutputs[address][len(chain.UnspentOutputs[address])-1]
-		chain.UnspentOutputs[address] = chain.UnspentOutputs[address][:len(chain.UnspentOutputs[address])-1]
 	}
 
 	for outputIndex, output := range tx.Outputs {
@@ -152,10 +145,8 @@ func (chain *Chain) AddTransaction(tx *transaction.Transaction) (ok bool) {
 }
 
 // Add a block to the chain
-// Assumes that block has been validated by node
 // Returns bool indicating success
-// TODO: Make this atomic - either it updates entire state if success or not at all
-// TODO: Add coinbase transactions
+// This is not a smart function - it will add the block without validation
 func (chain *Chain) AddBlock(block *block.Block) (ok bool) {
 	for _, tx := range block.Body {
 		success := chain.AddTransaction(tx)
@@ -163,6 +154,11 @@ func (chain *Chain) AddBlock(block *block.Block) (ok bool) {
 		if !success {
 			return false
 		}
+	}
+
+	coinbaseOk := chain.AddTransaction(block.Coinbase)
+	if !coinbaseOk {
+		return false
 	}
 
 	// Add new block

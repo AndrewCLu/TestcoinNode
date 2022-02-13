@@ -10,7 +10,7 @@ import (
 // A consensus provides agreed upon methods for coordinating a shared state of the blockchain
 type Consensus interface {
 	// Returns a boolean indicating if the given transaction is valid based on the current state of the blockchain
-	ValidateTransaction(chain *chain.Chain, tx *transaction.Transaction) bool
+	ValidatePendingTransaction(chain *chain.Chain, tx *transaction.Transaction) bool
 
 	// Returns a boolean indicating if the given block is valid based on the current state of the blockchain
 	ValidateBlock(chain *chain.Chain, block *block.Block) bool

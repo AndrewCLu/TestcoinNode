@@ -68,7 +68,7 @@ func GetGenesisBlock(coinbaseAddress common.Address) *block.Block {
 // Validates a transaction and if valid, adds it to the chain's pool of pending transactions
 // Returns a bool indicating success
 func (node *Node) AddPendingTransaction(tx *transaction.Transaction) bool {
-	validateTx := node.Consensus.ValidateTransaction(node.Chain, tx)
+	validateTx := node.Consensus.ValidatePendingTransaction(node.Chain, tx)
 	if !validateTx {
 		fmt.Println("Failed to validate new transaction, not adding to chain")
 		return false
@@ -90,7 +90,7 @@ func (node *Node) NewCoinbaseTransaction(account *account.Account, readableAmoun
 		[]*transaction.TransactionOutput{output},
 	)
 
-	if !success || !node.Consensus.ValidateTransaction(node.Chain, newTransaction) {
+	if !success || !node.Consensus.ValidatePendingTransaction(node.Chain, newTransaction) {
 		fmt.Printf("Attempted to create new coinbase transaction and FAILED")
 		return nil
 	}
@@ -133,7 +133,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 		for _, tx := range pendingTransactions {
 			for _, input := range tx.Inputs {
 				// Utxo is already pending, don't add to this transaction unless we cannot achieve the desired amount otherwise
-				if input.OutputPointer.Hash().Equal(utxo.Hash()) {
+				if input.OutputPointer.Equal(utxo) {
 					match = true
 					pendingUtxos = append(pendingUtxos, utxo)
 					break nextUtxo
@@ -143,8 +143,8 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 		// Utxo is not pending, add to this transaction
 		if !match {
 			selectedUtxos = append(selectedUtxos, utxo)
-			utxoTx, _ := node.Chain.GetTransaction(utxo.TransactionHash)
-			currentAmount += utxoTx.Outputs[utxo.OutputIndex].Amount
+			newAmount, _ := node.Chain.GetOutputAmount(utxo)
+			currentAmount += newAmount
 		}
 
 		if currentAmount >= amount+transactionFee {
@@ -155,8 +155,8 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 	if currentAmount < amount+transactionFee {
 		for _, utxo := range pendingUtxos {
 			selectedUtxos = append(selectedUtxos, utxo)
-			utxoTx, _ := node.Chain.GetTransaction(utxo.TransactionHash)
-			currentAmount += utxoTx.Outputs[utxo.OutputIndex].Amount
+			newAmount, _ := node.Chain.GetOutputAmount(utxo)
+			currentAmount += newAmount
 
 			if currentAmount >= amount+transactionFee {
 				break
@@ -201,7 +201,7 @@ func (node *Node) NewPeerTransaction(account *account.Account, receiverAddress c
 
 	newTransaction, success := transaction.New(inputs, outputs)
 
-	if !success || !node.Consensus.ValidateTransaction(node.Chain, newTransaction) {
+	if !success || !node.Consensus.ValidatePendingTransaction(node.Chain, newTransaction) {
 		fmt.Printf("Attempted to create new peer transaction and FAILED")
 		return nil
 	}

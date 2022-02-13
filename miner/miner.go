@@ -49,6 +49,7 @@ func New(coinbase common.Address, chain *chain.Chain, consensus consensus.Consen
 
 // Tries to mine a block from pending transactions on the chain
 // Returns the block and a boolean indicating success
+// TODO: Miner must validate transactions
 // TODO: Have better selection criteria for transactions
 // TOOD: Add a coinbase transaction for the miner
 func (miner *Miner) MineBlock() (blk *block.Block, ok bool) {
